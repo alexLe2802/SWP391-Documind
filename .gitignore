@@ -1,0 +1,32 @@
+# Dependencies and build outputs
+node_modules/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+
+# Local tooling and editor state
+.tools/
+.cache/
+.tmp-opennext-verify/
+.idea/
+.vscode/
+.agents/
+.codex-review/
+.superpowers/
+.mcp.json
+skills-lock.json
+*.log
+*.docx
+
+# OS files
+.DS_Store
+Thumbs.db
+backend/backups/
