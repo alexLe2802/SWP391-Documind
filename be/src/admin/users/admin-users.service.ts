@@ -1,7 +1,12 @@
-﻿import { Injectable } from '@nestjs/common';
+﻿import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, RoleName, User, UserStatus } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
+import { AdminMutableUserStatus } from './dto/update-user-status.dto';
 
 type UserWithRole = User & { role: { name: RoleName } };
 
@@ -62,6 +67,62 @@ export class AdminUsersService {
         hasPrevious: page > 1,
       },
     };
+  }
+
+  async updateStatus(
+    id: string,
+    status: AdminMutableUserStatus,
+    reason?: string,
+    actorUserId = id,
+  ): Promise<AdminUserDto> {
+    const existing = await this.prisma.user.findUnique({
+      where: { id },
+      include: { role: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (id === actorUserId && status === AdminMutableUserStatus.BLOCKED) {
+      throw new BadRequestException('Admins cannot block their own account.');
+    }
+
+    if (
+      existing.role.name === RoleName.ADMIN &&
+      status === AdminMutableUserStatus.BLOCKED
+    ) {
+      throw new BadRequestException('Admins cannot block other admin accounts.');
+    }
+
+    if (existing.status === UserStatus.INACTIVE) {
+      throw new BadRequestException(
+        'Pending email verification users must be activated through email verification.',
+      );
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { status },
+      include: { role: true },
+    });
+
+    // Record the status change in audit log when available.
+    void this.prisma.auditLog
+      .create({
+        data: {
+          userId: actorUserId,
+          action: 'admin.user_status_updated',
+          targetType: 'User',
+          targetId: id,
+          metadata: { status, reason: reason ?? null },
+        },
+      })
+      .catch(() => {
+        // Non-fatal: audit log is best-effort.
+      });
+
+    return this.toAdminUserDto(updated);
   }
 
   private buildWhere(query: AdminUsersQueryDto): Prisma.UserWhereInput {
