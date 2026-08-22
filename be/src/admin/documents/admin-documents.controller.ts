@@ -227,6 +227,56 @@ export class AdminDocumentsController {
     return updated;
   }
 
+  @Put(':id/reject')
+  @ApiOperation({ summary: 'Reject a document — reason is required and stored for the owner' })
+  async reject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: RejectDocumentDto,
+    @CurrentUser() admin: AuthenticatedAdmin,
+  ): Promise<ModerationActionResponse> {
+    const existing = await this.prisma.document.findUnique({
+      where: { id, visibility: DocumentVisibility.PUBLIC },
+      select: { id: true, ownerId: true, title: true },
+    });
+    if (!existing) throw new NotFoundException('Document not found');
+
+    // Rejection reason is persisted so the owner can understand why the
+    // document was removed from the community library.
+    const updated = await this.prisma.document.update({
+      where: { id },
+      data: {
+        moderationStatus: ModerationStatus.REJECTED,
+        status: DocumentStatus.REJECTED,
+        rejectionReason: body.reason,
+        reviewedAt: new Date(),
+        reviewedBy: admin.id,
+      },
+      select: {
+        id: true,
+        moderationStatus: true,
+        moderationFlag: true,
+        rejectionReason: true,
+        reviewedAt: true,
+        reviewedBy: true,
+        updatedAt: true,
+      },
+    });
+
+    void this.prisma.auditLog
+      .create({
+        data: {
+          userId: admin.id,
+          action: 'admin.document_rejected',
+          targetType: 'Document',
+          targetId: id,
+          metadata: { reason: body.reason },
+        },
+      })
+      .catch(() => {});
+
+    return updated;
+  }
+
   @Put(':id/hide')
   @ApiOperation({ summary: 'Hide or unhide a public document' })
   async hide(
@@ -246,7 +296,6 @@ export class AdminDocumentsController {
       data: { status },
     });
 
-    // Log the action for audit trail — best effort.
     void this.prisma.auditLog
       .create({
         data: {
