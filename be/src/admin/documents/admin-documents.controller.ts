@@ -1,25 +1,40 @@
 ﻿import {
+  Body,
   Controller,
   Get,
   NotFoundException,
   Param,
   ParseUUIDPipe,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { FirebaseAuthGuard } from '../../auth/guards/firebase-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import {
+  DocumentStatus,
   DocumentVisibility,
-  ModerationFlag,
   ModerationStatus,
   Prisma,
   RoleName,
 } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdminDocumentsQueryDto } from './dto/admin-documents-query.dto';
+import { HideDocumentDto, RejectDocumentDto } from './dto/moderation-action.dto';
+
+type AuthenticatedAdmin = { id: string };
+
+type ModerationActionResponse = {
+  id: string;
+  moderationStatus: ModerationStatus;
+  rejectionReason: string | null;
+  reviewedAt: Date | null;
+  reviewedBy: string | null;
+  updatedAt: Date;
+};
 
 @ApiTags('admin-documents')
 @ApiBearerAuth()
@@ -46,7 +61,6 @@ export class AdminDocumentsController {
     const limit = query.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    // Only public documents are subject to moderation review.
     const where: Prisma.DocumentWhereInput = {
       visibility: DocumentVisibility.PUBLIC,
     };
@@ -176,5 +190,80 @@ export class AdminDocumentsController {
     });
     if (!doc) throw new NotFoundException('Document not found');
     return { ...doc, fileSize: doc.fileSize.toString() };
+  }
+
+  @Put(':id/approve')
+  @ApiOperation({ summary: 'Approve a pending document for publication' })
+  async approve(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() admin: AuthenticatedAdmin,
+  ): Promise<ModerationActionResponse> {
+    const existing = await this.prisma.document.findUnique({
+      where: { id, visibility: DocumentVisibility.PUBLIC },
+      select: { id: true, ownerId: true, title: true },
+    });
+    if (!existing) throw new NotFoundException('Document not found');
+
+    const updated = await this.prisma.document.update({
+      where: { id },
+      data: {
+        moderationStatus: ModerationStatus.APPROVED,
+        status: DocumentStatus.ACTIVE,
+        rejectionReason: null,
+        reviewedAt: new Date(),
+        reviewedBy: admin.id,
+      },
+      select: {
+        id: true,
+        moderationStatus: true,
+        moderationFlag: true,
+        rejectionReason: true,
+        reviewedAt: true,
+        reviewedBy: true,
+        updatedAt: true,
+      },
+    });
+
+    return updated;
+  }
+
+  @Put(':id/hide')
+  @ApiOperation({ summary: 'Hide or unhide a public document' })
+  async hide(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: HideDocumentDto,
+    @CurrentUser() admin: AuthenticatedAdmin,
+  ): Promise<{ id: string; status: DocumentStatus; moderationReason: string | null; updatedAt: Date }> {
+    const existing = await this.prisma.document.findUnique({
+      where: { id, visibility: DocumentVisibility.PUBLIC },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundException('Document not found');
+
+    const status = body.hidden ? DocumentStatus.HIDDEN : DocumentStatus.ACTIVE;
+    const updated = await this.prisma.document.update({
+      where: { id },
+      data: { status },
+    });
+
+    // Log the action for audit trail — best effort.
+    void this.prisma.auditLog
+      .create({
+        data: {
+          userId: admin.id,
+          action: body.hidden ? 'admin.document_hidden' : 'admin.document_unhidden',
+          targetType: 'Document',
+          targetId: id,
+          metadata: { status, reason: body.reason ?? null },
+        },
+      })
+      .catch(() => {});
+
+    return {
+      id: updated.id,
+      status: updated.status,
+      moderationReason: body.reason ?? null,
+      updatedAt: updated.updatedAt,
+    };
   }
 }
