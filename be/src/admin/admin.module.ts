@@ -2,9 +2,10 @@
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AdminDocumentsModule } from './documents/admin-documents.module';
+import { ReportsModule } from './reports/reports.module';
 import { AdminUsersModule } from './users/admin-users.module';
 
 @Module({
-  imports: [DashboardModule, AdminUsersModule, AdminDocumentsModule, AuditLogModule],
+  imports: [DashboardModule, AdminUsersModule, AdminDocumentsModule, AuditLogModule, ReportsModule],
 })
 export class AdminModule {}
