@@ -1,5 +1,6 @@
 # Dependencies and build outputs
 node_modules/
+**/node_modules*/
 .next/
 dist/
 coverage/
@@ -11,6 +12,8 @@ coverage/
 !.env.example
 backend/.env
 frontend/.env
+backend/be.env
+frontend/fe.env
 
 # Local tooling and editor state
 .tools/

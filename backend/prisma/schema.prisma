@@ -1,0 +1,517 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Role {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      RoleName @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  users     User[]
+
+  @@map("roles")
+}
+
+model User {
+  id                      String                   @id @default(uuid()) @db.Uuid
+  firebaseUid             String                   @unique @map("firebase_uid")
+  email                   String                   @unique
+  fullName                String                   @map("full_name")
+  avatarUrl               String?                  @map("avatar_url")
+  authProvider            AuthProvider             @map("auth_provider")
+  roleId                  String                   @map("role_id") @db.Uuid
+  status                  UserStatus               @default(ACTIVE)
+  createdAt               DateTime                 @default(now()) @map("created_at")
+  updatedAt               DateTime                 @updatedAt @map("updated_at")
+  termsAcceptedAt         DateTime?                @map("terms_accepted_at")
+  auditLogs               AuditLog[]
+  chatSessions            ChatSession[]
+  documents               Document[]
+  downloadLogs            DownloadLog[]
+  subjects                Subject[]
+  categories              Category[]
+  payments                Payment[]
+  paymentOrders           PaymentOrder[]
+  entitlementTransactions EntitlementTransaction[]
+  savedDocuments          SavedDocument[]
+  subscription            Subscription?
+  subscriptions           UserSubscription[]
+  notifications           Notification[]
+  role                    Role                     @relation(fields: [roleId], references: [id])
+
+  @@index([roleId])
+  @@index([status])
+  @@map("users")
+}
+
+model Notification {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  type       String
+  title      String
+  message    String
+  documentId String?   @map("document_id") @db.Uuid
+  isRead     Boolean   @default(false) @map("is_read")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  readAt     DateTime? @map("read_at")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+
+model PaymentOrder {
+  id                     String                  @id @default(uuid()) @db.Uuid
+  invoiceNumber          String                  @unique @map("invoice_number")
+  userId                 String                  @map("user_id") @db.Uuid
+  plan                   SubscriptionPlan
+  paymentMethod          PaymentMethod           @map("payment_method")
+  amount                 Int
+  currency               String                  @default("VND")
+  status                 PaymentStatus           @default(PENDING)
+  sepayOrderId           String?                 @map("sepay_order_id")
+  sepayTransactionId     String?                 @unique @map("sepay_transaction_id")
+  paidAt                 DateTime?               @map("paid_at")
+  expiresAt              DateTime                @map("expires_at")
+  durationDays           Int                     @default(30) @map("duration_days")
+  storageMb              Int                     @default(0) @map("storage_mb")
+  uploadCredits          Int                     @default(0) @map("upload_credits")
+  aiCredits              Int                     @default(0) @map("ai_credits")
+  unlimitedAiDays        Int                     @default(0) @map("unlimited_ai_days")
+  rawNotification        Json?                   @map("raw_notification")
+  createdAt              DateTime                @default(now()) @map("created_at")
+  updatedAt              DateTime                @updatedAt @map("updated_at")
+  subscription           Subscription?
+  entitlementTransaction EntitlementTransaction?
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@map("payment_orders")
+}
+
+model Subscription {
+  id               String           @id @default(uuid()) @db.Uuid
+  userId           String           @unique @map("user_id") @db.Uuid
+  plan             SubscriptionPlan @default(FREE)
+  paymentOrderId   String?          @unique @map("payment_order_id") @db.Uuid
+  startsAt         DateTime         @default(now()) @map("starts_at")
+  expiresAt        DateTime?        @map("expires_at")
+  storageLimitMb   Int              @default(100) @map("storage_limit_mb")
+  uploadLimit      Int              @default(10) @map("upload_limit")
+  aiChatLimit      Int?             @default(20) @map("ai_chat_limit")
+  aiChatsUsed      Int              @default(0) @map("ai_chats_used")
+  unlimitedAiUntil DateTime?        @map("unlimited_ai_until")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  paymentOrder     PaymentOrder?    @relation(fields: [paymentOrderId], references: [id], onDelete: SetNull)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([plan])
+  @@index([expiresAt])
+  @@map("subscriptions")
+}
+
+model EntitlementTransaction {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @map("user_id") @db.Uuid
+  paymentOrderId  String           @unique @map("payment_order_id") @db.Uuid
+  packageCode     SubscriptionPlan @map("package_code")
+  durationDays    Int              @map("duration_days")
+  storageDeltaMb  Int              @map("storage_delta_mb")
+  uploadDelta     Int              @map("upload_delta")
+  aiCreditDelta   Int              @map("ai_credit_delta")
+  unlimitedAiDays Int              @map("unlimited_ai_days")
+  accessExpiresAt DateTime         @map("access_expires_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  paymentOrder    PaymentOrder     @relation(fields: [paymentOrderId], references: [id], onDelete: Restrict)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("entitlement_transactions")
+}
+
+model Subject {
+  id          String     @id @default(uuid()) @db.Uuid
+  ownerId     String?    @map("owner_id") @db.Uuid
+  code        String
+  name        String
+  description String?
+  deletedAt   DateTime?  @map("deleted_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  owner       User?      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  categories  Category[]
+  documents   Document[]
+
+  @@unique([ownerId, code])
+  @@index([ownerId, deletedAt])
+  @@map("subjects")
+}
+
+model Category {
+  id          String     @id @default(uuid()) @db.Uuid
+  ownerId     String?    @map("owner_id") @db.Uuid
+  subjectId   String?    @map("subject_id") @db.Uuid
+  name        String
+  description String?
+  deletedAt   DateTime?  @map("deleted_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  owner       User?      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  subject     Subject?   @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  documents   Document[]
+
+  @@unique([ownerId, subjectId, name])
+  @@index([ownerId, deletedAt])
+  @@index([subjectId])
+  @@map("categories")
+}
+
+model Tag {
+  id        String        @id @default(uuid()) @db.Uuid
+  name      String        @unique
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  documents DocumentTag[]
+
+  @@map("tags")
+}
+
+model Document {
+  id                 String             @id @default(uuid()) @db.Uuid
+  ownerId            String             @map("owner_id") @db.Uuid
+  subjectId          String             @map("subject_id") @db.Uuid
+  categoryId         String             @map("category_id") @db.Uuid
+  title              String
+  description        String?
+  fileName           String             @map("file_name")
+  fileType           String             @map("file_type")
+  fileSize           BigInt             @map("file_size")
+  storagePath        String             @map("storage_path")
+  fileUrl            String?            @map("file_url")
+  visibility         DocumentVisibility @default(PRIVATE)
+  status             DocumentStatus     @default(ACTIVE)
+  extractionStatus   ExtractionStatus   @default(PENDING) @map("extraction_status")
+  moderationStatus   ModerationStatus   @default(PENDING) @map("moderation_status")
+  moderationFlag     ModerationFlag     @default(NORMAL) @map("moderation_flag")
+  moderationPriority Int                @default(2) @map("moderation_priority")
+  rejectionReason    String?            @map("rejection_reason")
+  matchedKeywords    Json               @default("[]") @map("matched_keywords")
+  matchedContexts    Json               @default("[]") @map("matched_contexts")
+  submittedAt        DateTime           @default(now()) @map("submitted_at")
+  reviewedAt         DateTime?          @map("reviewed_at")
+  reviewedBy         String?            @map("reviewed_by") @db.Uuid
+  version            Int                @default(1)
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  downloadCount      Int                @default(0) @map("download_count")
+  saveCount          Int                @default(0) @map("save_count")
+  viewCount          Int                @default(0) @map("view_count")
+  sourceLink         String?            @map("source_link")
+  chatSessions       ChatSession[]
+  chatSources        ChatSource[]
+  content            DocumentContent?
+  tags               DocumentTag[]
+  category           Category           @relation(fields: [categoryId], references: [id])
+  owner              User               @relation(fields: [ownerId], references: [id])
+  subject            Subject            @relation(fields: [subjectId], references: [id])
+  downloadLogs       DownloadLog[]
+  savedBy            SavedDocument[]
+  chunks             DocumentChunk[]
+
+  @@index([ownerId, status])
+  @@index([visibility, status])
+  @@index([moderationStatus, moderationPriority, submittedAt])
+  @@index([subjectId])
+  @@index([categoryId])
+  @@map("documents")
+}
+
+model DocumentTag {
+  documentId String   @map("document_id") @db.Uuid
+  tagId      String   @map("tag_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, tagId])
+  @@index([tagId])
+  @@map("document_tags")
+}
+
+model DocumentContent {
+  id               String            @id @default(uuid()) @db.Uuid
+  documentId       String            @unique @map("document_id") @db.Uuid
+  extractedText    String?           @map("extracted_text")
+  contentSummary   String?           @map("content_summary")
+  sourceType       SourceType        @map("source_type")
+  extractionStatus ExtractionStatus  @default(PENDING) @map("extraction_status")
+  extractedAt      DateTime?         @map("extracted_at")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  jobId            String            @unique @default(uuid()) @map("job_id") @db.Uuid
+  progress         Int               @default(0)
+  retryCount       Int               @default(0) @map("retry_count")
+  errorCode        String?           @map("error_code")
+  errorMessage     String?           @map("error_message")
+  qualityStatus    ExtractionQuality @default(READY) @map("quality_status")
+  qualityDetails   Json?             @map("quality_details")
+  document         Document          @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("document_contents")
+}
+
+model DocumentChunk {
+  id            String                     @id @default(uuid()) @db.Uuid
+  documentId    String                     @map("document_id") @db.Uuid
+  chunkIndex    Int                        @map("chunk_index")
+  content       String
+  embedding     Unsupported("vector(768)")
+  sourceLocator Json?                      @map("source_locator")
+  document      Document                   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  chatSources   ChatSource[]
+  createdAt     DateTime                   @default(now()) @map("created_at")
+
+  @@unique([documentId, chunkIndex])
+  @@index([documentId])
+  @@map("document_chunks")
+}
+
+model SavedDocument {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  documentId String   @map("document_id") @db.Uuid
+  savedAt    DateTime @default(now()) @map("saved_at")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, documentId])
+  @@index([documentId])
+  @@map("saved_documents")
+}
+
+model ChatSession {
+  id         String        @id @default(uuid()) @db.Uuid
+  userId     String        @map("user_id") @db.Uuid
+  documentId String?       @map("document_id") @db.Uuid
+  mode       ChatMode
+  title      String?
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+  messages   ChatMessage[]
+  document   Document?     @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([documentId])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id                 String        @id @default(uuid()) @db.Uuid
+  chatSessionId      String        @map("chat_session_id") @db.Uuid
+  sender             MessageSender
+  content            String
+  status             String?       @default("completed")
+  interruptionReason String?       @map("interruption_reason")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  chatSession        ChatSession   @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+  sources            ChatSource[]
+
+  @@index([chatSessionId, createdAt])
+  @@map("chat_messages")
+}
+
+model ChatSource {
+  id              String         @id @default(uuid()) @db.Uuid
+  chatMessageId   String         @map("chat_message_id") @db.Uuid
+  documentId      String         @map("document_id") @db.Uuid
+  documentChunkId String?        @map("document_chunk_id") @db.Uuid
+  chunkIndex      Int?           @map("chunk_index")
+  relevanceScore  Float?         @map("relevance_score")
+  snippet         String?
+  sourcePassage   String?        @map("source_passage")
+  sourceLocator   Json?          @map("source_locator")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  chatMessage     ChatMessage    @relation(fields: [chatMessageId], references: [id], onDelete: Cascade)
+  document        Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentChunk   DocumentChunk? @relation(fields: [documentChunkId], references: [id], onDelete: SetNull)
+
+  @@unique([chatMessageId, documentId])
+  @@index([documentId])
+  @@index([documentChunkId])
+  @@map("chat_sources")
+}
+
+model DownloadLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  documentId   String   @map("document_id") @db.Uuid
+  downloadedAt DateTime @default(now()) @map("downloaded_at")
+  document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, downloadedAt])
+  @@index([documentId])
+  @@map("download_logs")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String
+  targetType String   @map("target_type")
+  targetId   String?  @map("target_id")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([targetType, targetId])
+  @@map("audit_logs")
+}
+
+enum RoleName {
+  USER
+  ADMIN
+}
+
+enum AuthProvider {
+  GOOGLE
+  EMAIL_PASSWORD
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  INACTIVE
+}
+
+enum DocumentVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum DocumentStatus {
+  ACTIVE
+  HIDDEN
+  DELETED
+}
+
+enum ExtractionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  MOCKED
+}
+
+enum ExtractionQuality {
+  READY
+  PARTIAL
+  UNREADABLE
+}
+
+enum SourceType {
+  PDF
+  DOC
+  DOCX
+  EXCEL
+  PPTX
+  LINK
+  AUDIO
+  VIDEO
+  MOCK
+}
+
+enum ChatMode {
+  ASK_THIS_DOCUMENT
+  ASK_MY_LIBRARY
+  COMMUNITY_SEARCH
+}
+
+enum MessageSender {
+  USER
+  AI
+  SYSTEM
+}
+
+enum SubscriptionPlan {
+  FREE
+  STUDENT
+  PRO
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CARD
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ModerationFlag {
+  NORMAL
+  FLAGGED
+  SCAN_FAILED
+}
+
+model UserSubscription {
+  id        String             @id @default(uuid()) @db.Uuid
+  userId    String             @map("user_id") @db.Uuid
+  planId    String             @map("plan_id")
+  status    SubscriptionStatus @default(ACTIVE)
+  startsAt  DateTime           @map("starts_at")
+  expiresAt DateTime           @map("expires_at")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("user_subscriptions")
+}
+
+model Payment {
+  id                   String        @id @default(uuid()) @db.Uuid
+  userId               String        @map("user_id") @db.Uuid
+  planId               String        @map("plan_id")
+  amount               Int
+  status               PaymentStatus @default(PENDING)
+  transactionCode      String        @unique @map("transaction_code")
+  paymentGateway       String?       @map("payment_gateway")
+  gatewayTransactionId String?       @map("gateway_transaction_id")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([transactionCode])
+  @@map("payments")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  SUCCESS
+  FAILED
+  CANCELLED
+  REFUNDED
+  EXPIRED
+}

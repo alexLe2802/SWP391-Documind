@@ -1,0 +1,27 @@
+node_modules/
+node_modules*/
+.npm-cache/
+.npm-logs/
+dist/
+coverage/
+src/generated/
+*.tsbuildinfo
+tmp/
+temp/
+.env
+.env.*
+!.env.example
+DEPLOYMENT.md
+firebase-service-account*.json
+*.log
+.DS_Store
+.idea/
+.vscode/
+# Added by code-review-graph
+.code-review-graph/
+.codex-review/
+.agents/
+.superpowers/
+.mcp.json
+ThienNTN-Chi-Tiet-Progress-Report.docx
+generate_detailed_report.py
