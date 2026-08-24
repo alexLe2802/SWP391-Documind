@@ -1,74 +1,140 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bookmark, ChevronLeft, ChevronRight, FileSpreadsheet, FileText, Search, X } from "lucide-react";
+import {
+  Bot,
+  Bookmark,
+  BookmarkX,
+  Download,
+  Eye,
+  FileSpreadsheet,
+  FileText,
+  Search,
+  Sparkles,
+  X,
+} from "lucide-react";
 import Link from "next/link";
-import { fetchLibraryDocuments, fetchSubjects } from "../api/documents.api";
+import { unsaveCommunityDocument } from "../api/community.api";
+import {
+  createDownloadUrl,
+  createPreviewUrl,
+  fetchLibraryDocuments,
+} from "../api/documents.api";
+import { useLanguage } from "../i18n/LanguageProvider";
+import { localizeLibraryDocument } from "../i18n/document-display";
+import { localize } from "../i18n/localize";
+import { ROUTES } from "../lib/routes";
+import {
+  filterAndSortSavedDocuments,
+  type SavedDocumentSort,
+} from "../lib/saved-documents";
+import { getFullPreviewUrl, getPreviewFrameUrl } from "../lib/office-viewer";
 import type { LibraryDocument } from "../types/document";
 
-type Pagination = {
-	page: number;
-	limit: number;
-	total: number;
-	totalPages: number;
-};
-
-const PAGE_SIZE = 10;
-
+// Hiển thị giao diện tài liệu icon.
 function DocumentIcon({ type }: { type: string }) {
-	return type === "XLSX" ? <FileSpreadsheet size={20} /> : <FileText size={20} />;
+  return type === "XLSX" ? (
+    <FileSpreadsheet size={20} />
+  ) : (
+    <FileText size={20} />
+  );
 }
 
-export function SaveView() {
-	const [documents, setDocuments] = useState<LibraryDocument[]>([]);
-	const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 });
-	const [query, setQuery] = useState("");
-	const [subject, setSubject] = useState("");
-	const [fileType, setFileType] = useState("");
-	const [sortBy, setSortBy] = useState<"createdAt" | "title" | "fileSize">("createdAt");
-	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-	const [page, setPage] = useState(1);
-	const [isLoading, setIsLoading] = useState(true);
-	const [errorMessage, setErrorMessage] = useState("");
-	const [subjectOptions, setSubjectOptions] = useState<Array<{ id: string; name: string }>>([]);
+// Hiển thị giao diện đã lưu view.
+export function SavedView() {
+  const { locale } = useLanguage();
+  const text = useCallback(
+    (vi: string, en: string) => localize(locale, vi, en),
+    [locale],
+  );
+  const [savedDocuments, setSavedDocuments] = useState<LibraryDocument[]>([]);
+  const [query, setQuery] = useState("");
+  const [subject, setSubject] = useState("");
+  const [fileType, setFileType] = useState("");
+  const [sort, setSort] = useState<SavedDocumentSort>("newest");
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [downloadingDocumentId, setDownloadingDocumentId] = useState<
+    string | null
+  >(null);
+  const [unsavingDocumentId, setUnsavingDocumentId] = useState<string | null>(
+    null,
+  );
+  const [previewDocument, setPreviewDocument] = useState<LibraryDocument>();
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
 
-	const loadDocuments = useCallback(async () => {
-		setIsLoading(true);
-		setErrorMessage("");
-		try {
-			const result = await fetchLibraryDocuments({ savedOnly: true, search: query.trim() || undefined, subjectId: subject || undefined, fileType: fileType || undefined, sortBy, sortOrder, page, limit: PAGE_SIZE });
-			setDocuments(result.items);
-			setPagination(result.pagination);
-		} catch (error) {
-			setDocuments([]);
-			setErrorMessage(error instanceof Error ? error.message : "Unable to load saved documents.");
-		} finally {
-			setIsLoading(false);
-		}
-	}, [fileType, page, query, sortBy, sortOrder, subject]);
+  useEffect(() => {
+    let isMounted = true;
 
-	useEffect(() => { void loadDocuments(); }, [loadDocuments]);
+    // Cập nhật đã lưu tài liệu.
+    async function refreshSavedDocuments() {
+      setIsLoading(true);
+      setErrorMessage("");
+      try {
+        const result = await fetchLibraryDocuments({
+          savedOnly: true,
+          limit: 100,
+        });
+        if (isMounted) setSavedDocuments(result.items);
+      } catch {
+        if (isMounted) {
+          setErrorMessage(
+            text(
+              "Không thể tải tài liệu đã lưu.",
+              "Unable to load saved documents.",
+            ),
+          );
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
 
-	useEffect(() => {
-		void fetchSubjects().then(setSubjectOptions).catch(() => undefined);
-	}, []);
+    void refreshSavedDocuments();
+    window.addEventListener("focus", refreshSavedDocuments);
 
-	const subjects = useMemo(() => [...subjectOptions].sort((first, second) => first.name.localeCompare(second.name)), [subjectOptions]);
-	const fileTypes = ["PDF", "DOCX", "PPTX", "XLSX"];
+    return () => {
+      isMounted = false;
+      window.removeEventListener("focus", refreshSavedDocuments);
+    };
+  }, [locale, text]);
 
-	function updateFilter<T>(setter: (value: T) => void, value: T) {
-		setPage(1);
-		setter(value);
-	}
-
-	function clearFilters() {
-		setQuery("");
-		setSubject("");
-		setFileType("");
-		setSortBy("createdAt");
-		setSortOrder("desc");
-		setPage(1);
-	}
+  const displayedDocuments = useMemo(
+    () =>
+      savedDocuments.map((document) =>
+        localizeLibraryDocument(document, locale),
+      ),
+    [locale, savedDocuments],
+  );
+  const subjects = useMemo(
+    () =>
+      [
+        ...new Set(displayedDocuments.map((document) => document.subject)),
+      ].sort(),
+    [displayedDocuments],
+  );
+  const fileTypes = useMemo(
+    () =>
+      [
+        ...new Set(displayedDocuments.map((document) => document.fileType)),
+      ].sort(),
+    [displayedDocuments],
+  );
+  const filteredDocuments = useMemo(
+    () =>
+      filterAndSortSavedDocuments(displayedDocuments, {
+        query,
+        subject,
+        fileType,
+        sort,
+      }),
+    [displayedDocuments, fileType, query, sort, subject],
+  );
+  const hasActiveFilters = Boolean(
+    query || subject || fileType || sort !== "newest",
+  );
 
 	return (
 		<main className="simple-workspace-page">
