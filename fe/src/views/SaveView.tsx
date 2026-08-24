@@ -136,6 +136,76 @@ export function SavedView() {
     query || subject || fileType || sort !== "newest",
   );
 
+  
+  // Xóa hoặc giải phóng filters.
+  function clearFilters() {
+    setQuery("");
+    setSubject("");
+    setFileType("");
+    setSort("newest");
+  }
+
+  useEffect(() => {
+    if (!previewDocument) {
+      setPreviewUrl("");
+      setPreviewError("");
+      setIsPreviewLoading(false);
+      return;
+    }
+    let active = true;
+    setPreviewUrl("");
+    setPreviewError("");
+    setIsPreviewLoading(true);
+
+    createPreviewUrl(previewDocument.id)
+      .then((result) => {
+        if (active) setPreviewUrl(getPreviewFrameUrl(result, previewDocument));
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setPreviewError(
+            error instanceof Error
+              ? error.message
+              : text(
+                  "Không thể tải bản xem trước.",
+                  "Could not load the preview.",
+                ),
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setIsPreviewLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [previewDocument, text]);
+
+  // Hiển thị hoặc mở object.
+  async function openObject(
+    document: LibraryDocument,
+    mode: "preview" | "download",
+  ) {
+    try {
+      const result =
+        mode === "preview"
+          ? await createPreviewUrl(document.id)
+          : await createDownloadUrl(document.id);
+      const url =
+        mode === "preview"
+          ? getFullPreviewUrl(result, document)
+          : result.url;
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : text("Không thể mở tài liệu.", "Could not open the document."),
+      );
+    }
+  }
+
 	return (
 		<main className="simple-workspace-page">
 			<header><p className="eyebrow">SAVED</p><h1>Saved documents</h1></header>
