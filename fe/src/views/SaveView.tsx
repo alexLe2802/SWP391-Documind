@@ -206,6 +206,52 @@ export function SavedView() {
     }
   }
 
+  
+  // Xử lý sự kiện tải xuống.
+  async function handleDownload(document: LibraryDocument) {
+    setErrorMessage("");
+    setDownloadingDocumentId(document.id);
+
+    try {
+      await openObject(document, "download");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : text(
+              "Không thể tải xuống tài liệu.",
+              "Unable to download the document.",
+            ),
+      );
+    } finally {
+      setDownloadingDocumentId(null);
+    }
+  }
+
+  // Xử lý sự kiện unsave.
+  async function handleUnsave(document: LibraryDocument) {
+    setErrorMessage("");
+    setUnsavingDocumentId(document.id);
+
+    try {
+      await unsaveCommunityDocument(document.id);
+      setSavedDocuments((current) =>
+        current.filter((item) => item.id !== document.id),
+      );
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : text(
+              "Không thể hủy lưu tài liệu.",
+              "Unable to remove the saved document.",
+            ),
+      );
+    } finally {
+      setUnsavingDocumentId(null);
+    }
+  }
+
 	return (
 		<main className="simple-workspace-page">
 			<header><p className="eyebrow">SAVED</p><h1>Saved documents</h1></header>
