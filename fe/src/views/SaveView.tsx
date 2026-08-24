@@ -252,25 +252,327 @@ export function SavedView() {
     }
   }
 
-	return (
-		<main className="simple-workspace-page">
-			<header><p className="eyebrow">SAVED</p><h1>Saved documents</h1></header>
-			<section className="saved-controls" aria-label="Search and filter saved documents">
-				<label className="saved-search"><Search size={18} /><input value={query} onChange={(event) => updateFilter(setQuery, event.target.value)} placeholder="Search title, subject, tags..." /></label>
-				<select value={subject} onChange={(event) => updateFilter(setSubject, event.target.value)} aria-label="Filter by subject"><option value="">All subjects</option>{subjects.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select>
-				<select value={fileType} onChange={(event) => updateFilter(setFileType, event.target.value)} aria-label="Filter by file type"><option value="">All file types</option>{fileTypes.map((item) => <option value={item} key={item}>{item}</option>)}</select>
-				<select value={`${sortBy}:${sortOrder}`} onChange={(event) => { const [nextSortBy, nextSortOrder] = event.target.value.split(":") as [typeof sortBy, typeof sortOrder]; setSortBy(nextSortBy); setSortOrder(nextSortOrder); setPage(1); }} aria-label="Sort documents">
-					<option value="createdAt:desc">Newest</option><option value="createdAt:asc">Oldest</option><option value="title:asc">Name A-Z</option><option value="fileSize:desc">Largest file</option>
-				</select>
-				{query || subject || fileType || sortBy !== "createdAt" || sortOrder !== "desc" ? <button type="button" onClick={clearFilters}><X size={15} /> Clear filters</button> : null}
-			</section>
-			<p className="saved-results-count">{pagination.total} documents</p>
-			<section className="saved-source-list">
-				{isLoading ? <article><strong>Loading saved documents...</strong></article> : errorMessage ? <article><strong>{errorMessage}</strong></article> : documents.length ? documents.map((document) => (
-					<article key={document.id}><span><DocumentIcon type={document.fileType} /></span><div><strong>{document.title}</strong><p>{document.subject} / {document.fileName}</p></div><Link href={`/hoi-ai?scope=document&document=${document.id}`}>Ask AI</Link></article>
-				)) : <article><Bookmark size={20} /><strong>No saved documents found</strong></article>}
-			</section>
-			{pagination.totalPages > 1 ? <nav className="saved-pagination" aria-label="Saved document pages"><button type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)} aria-label="Previous page"><ChevronLeft size={18} /></button><span>Page {page} of {pagination.totalPages}</span><button type="button" disabled={page >= pagination.totalPages} onClick={() => setPage((current) => current + 1)} aria-label="Next page"><ChevronRight size={18} /></button></nav> : null}
-		</main>
-	);
+  return (
+    <main id="main-content" className="simple-workspace-page">
+      <header>
+        <p className="eyebrow">{text("ĐÃ LƯU", "SAVED")}</p>
+        <h1>{text("Tài liệu đã lưu.", "Saved documents.")}</h1>
+      </header>
+      <section
+        className="saved-controls"
+        aria-label={text(
+          "Tìm kiếm và lọc tài liệu đã lưu",
+          "Search and filter saved documents",
+        )}
+      >
+        <label className="saved-search">
+          <Search size={18} />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={text(
+              "Tìm theo tên, môn học, thẻ...",
+              "Search title, subject, tags...",
+            )}
+          />
+        </label>
+        <select
+          value={subject}
+          onChange={(event) => setSubject(event.target.value)}
+          aria-label={text("Lọc theo môn học", "Filter by subject")}
+        >
+          <option value="">{text("Tất cả môn học", "All subjects")}</option>
+          {subjects.map((item) => (
+            <option value={item} key={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+        <select
+          value={fileType}
+          onChange={(event) => setFileType(event.target.value)}
+          aria-label={text("Lọc theo loại tệp", "Filter by file type")}
+        >
+          <option value="">{text("Tất cả loại tệp", "All file types")}</option>
+          {fileTypes.map((item) => (
+            <option value={item} key={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+        <select
+          value={sort}
+          onChange={(event) => setSort(event.target.value as SavedDocumentSort)}
+          aria-label={text("Sắp xếp tài liệu", "Sort documents")}
+        >
+          <option value="newest">{text("Mới nhất", "Newest")}</option>
+          <option value="oldest">{text("Cũ nhất", "Oldest")}</option>
+          <option value="title-asc">{text("Tên A–Z", "Name A–Z")}</option>
+          <option value="size-desc">
+            {text("Dung lượng lớn nhất", "Largest file")}
+          </option>
+        </select>
+        {hasActiveFilters ? (
+          <button type="button" onClick={clearFilters}>
+            <X size={15} />
+            {text("Xóa bộ lọc", "Clear filters")}
+          </button>
+        ) : null}
+      </section>
+      {!isLoading && !errorMessage ? (
+        <p className="saved-results-count">
+          {text(
+            `${filteredDocuments.length} tài liệu`,
+            `${filteredDocuments.length} documents`,
+          )}
+        </p>
+      ) : null}
+      <section className="saved-source-list">
+        {isLoading ? (
+          <article>
+            <span>
+              <Sparkles size={20} />
+            </span>
+            <div>
+              <strong>
+                {text(
+                  "Đang tải tài liệu đã lưu...",
+                  "Loading saved documents...",
+                )}
+              </strong>
+            </div>
+          </article>
+        ) : errorMessage ? (
+          <article>
+            <span>
+              <Bookmark size={20} />
+            </span>
+            <div>
+              <strong>{errorMessage}</strong>
+            </div>
+            <Link href={ROUTES.community}>
+              <Sparkles size={15} />
+              {text("Xem cộng đồng", "Browse Community")}
+            </Link>
+          </article>
+        ) : filteredDocuments.length > 0 ? (
+          filteredDocuments.map((document) => (
+            <article key={document.id}>
+              <span>
+                <DocumentIcon type={document.fileType} />
+              </span>
+              <div>
+                <strong>{document.title}</strong>
+                <p>
+                  {document.subject} /{" "}
+                  {text("Đã lưu từ cộng đồng", "Saved from Community")}
+                </p>
+              </div>
+              <div className="saved-source-actions">
+                <button
+                  type="button"
+                  onClick={() => setPreviewDocument(document)}
+                >
+                  <Eye size={15} />
+                  {text("Xem", "View")}
+                </button>
+                <button
+                  type="button"
+                  disabled={downloadingDocumentId === document.id}
+                  onClick={() => void handleDownload(document)}
+                >
+                  <Download size={15} />
+                  {downloadingDocumentId === document.id
+                    ? text("Đang tải...", "Downloading...")
+                    : text("Tải xuống", "Download")}
+                </button>
+                <Link
+                  href={`${ROUTES.aiChat}?scope=document&document=${document.id}`}
+                >
+                  <Sparkles size={15} />
+                  {text("Hỏi AI", "Ask AI")}
+                </Link>
+                <button
+                  type="button"
+                  className="saved-source-unsave"
+                  disabled={unsavingDocumentId === document.id}
+                  onClick={() => void handleUnsave(document)}
+                >
+                  <BookmarkX size={15} />
+                  {unsavingDocumentId === document.id
+                    ? text("Đang hủy...", "Removing...")
+                    : text("Hủy lưu", "Unsave")}
+                </button>
+              </div>
+            </article>
+          ))
+        ) : savedDocuments.length === 0 ? (
+          <article>
+            <span>
+              <Bookmark size={20} />
+            </span>
+            <div>
+              <strong>
+                {text("Chưa có tài liệu đã lưu", "No saved documents yet")}
+              </strong>
+              <p>
+                {text(
+                  "Lưu tài liệu từ trang Cộng đồng để xem lại ở đây.",
+                  "Save documents from Community to see them here.",
+                )}
+              </p>
+            </div>
+            <Link href={ROUTES.community}>
+              <Sparkles size={15} />
+              {text("Xem cộng đồng", "Browse Community")}
+            </Link>
+          </article>
+        ) : (
+          <article>
+            <span>
+              <Search size={20} />
+            </span>
+            <div>
+              <strong>
+                {text(
+                  "Không tìm thấy tài liệu phù hợp",
+                  "No matching documents",
+                )}
+              </strong>
+              <p>
+                {text(
+                  "Thử từ khóa khác hoặc xóa bộ lọc.",
+                  "Try another keyword or clear the filters.",
+                )}
+              </p>
+            </div>
+            <button type="button" onClick={clearFilters}>
+              {text("Xóa bộ lọc", "Clear filters")}
+            </button>
+          </article>
+        )}
+      </section>
+
+      {previewDocument ? (
+        <div
+          className="preview-overlay"
+          role="presentation"
+          onMouseDown={() => setPreviewDocument(undefined)}
+        >
+          <article
+            className="preview-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${text("Xem tài liệu", "View document")} ${previewDocument.title}`}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <header>
+              <div>
+                <span className="document-type-icon">
+                  <DocumentIcon type={previewDocument.fileType} />
+                </span>
+                <span>
+                  <strong>{previewDocument.title}</strong>
+                  <small>{previewDocument.fileName}</small>
+                </span>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setPreviewDocument(undefined)}
+              >
+                <X size={18} />
+              </button>
+            </header>
+            <div className="preview-document-sheet">
+              {isPreviewLoading ? (
+                <div className="preview-frame-state">
+                  <span className="spinner" />
+                  {text("Đang tải bản xem trước...", "Loading preview...")}
+                </div>
+              ) : previewError ? (
+                <div className="preview-frame-state preview-frame-state--error">
+                  <strong>
+                    {text(
+                      "Không thể hiển thị bản xem trước",
+                      "Preview unavailable",
+                    )}
+                  </strong>
+                  <p>{previewError}</p>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => void openObject(previewDocument, "preview")}
+                  >
+                    <Eye size={16} />
+                    {text("Mở bản gốc", "Open original")}
+                  </button>
+                </div>
+              ) : previewUrl ? (
+                <iframe
+                  className="preview-frame"
+                  src={previewUrl}
+                  title={previewDocument.title}
+                />
+              ) : (
+                <div className="preview-frame-state">
+                  <p>
+                    {text("Chưa có bản xem trước.", "No preview available.")}
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="preview-details">
+              <p className="eyebrow">
+                {previewDocument.subject} / {previewDocument.category}
+              </p>
+              <p>
+                {previewDocument.description ||
+                  text("Chưa có mô tả.", "No description yet.")}
+              </p>
+              {previewDocument.tags.length ? (
+                <div className="preview-tag-list">
+                  {previewDocument.tags.map((tag, index) => (
+                    <span key={`${tag}-${index}`}>{tag}</span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            <footer>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => void openObject(previewDocument, "preview")}
+              >
+                <Eye size={16} />
+                {text("Mở bản gốc", "Open original")}
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => void openObject(previewDocument, "download")}
+              >
+                <Download size={16} />
+                {text("Tải xuống", "Download")}
+              </button>
+              {previewDocument.indexStatus === "READY" ? (
+                <Link
+                  href={`${ROUTES.aiChat}?scope=document&document=${previewDocument.id}`}
+                  className="primary-button"
+                >
+                  <Bot size={16} />
+                  {text("Hỏi AI", "Ask AI")}
+                </Link>
+              ) : (
+                <button type="button" className="primary-button" disabled>
+                  <Bot size={16} />
+                  {text("AI chưa sẵn sàng", "AI not ready")}
+                </button>
+              )}
+            </footer>
+          </article>
+        </div>
+      ) : null}
+    </main>
+  );
 }
