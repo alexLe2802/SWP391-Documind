@@ -1,4 +1,4 @@
-import {
+﻿import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
@@ -8,6 +8,7 @@ import { Reflector } from '@nestjs/core';
 import { RoleName } from '../../generated/prisma/client';
 import { AuthenticatedRequest } from '../auth.types';
 import { ROLES_KEY } from '../decorators/roles.decorator';
+import { isMockAuthEnabled } from '../mock-auth';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -20,6 +21,10 @@ export class RolesGuard implements CanActivate {
     );
 
     if (!requiredRoles?.length) {
+      return true;
+    }
+
+    if (isMockAuthEnabled()) {
       return true;
     }
 
