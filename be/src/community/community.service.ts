@@ -349,5 +349,69 @@ export class CommunityService {
     return { AND: filters };
   }
 
+  // Chuyển đổi hoặc chuẩn hóa order by.
+  private buildOrderBy(
+    query: CommunityDocumentQueryDto,
+  ): Prisma.DocumentOrderByWithRelationInput[] {
+    const sortBy = query.sortBy ?? CommunityDocumentSortBy.CREATED_AT;
+    const sortOrder = query.sortOrder ?? 'desc';
+    const primarySort = {
+      [sortBy]: sortOrder,
+    } as Prisma.DocumentOrderByWithRelationInput;
 
+    return [primarySort, { id: 'desc' }];
+  }
+
+  // Chuyển đổi hoặc chuẩn hóa serialize.
+  private serialize(
+    document: CommunityDocumentPayload,
+    currentUserId?: string,
+  ): CommunityDocument {
+    const { content, savedBy, ...safeDocument } = document;
+
+    return {
+      ...safeDocument,
+      fileSize: document.fileSize.toString(),
+      aiStatus: document.extractionStatus,
+      summary: content?.contentSummary ?? null,
+      saved: savedBy.length > 0,
+      owned: document.ownerId === currentUserId,
+    };
+  }
+
+  // Lấy dữ liệu đã lưu tài liệu.
+  private findSavedDocument(
+    userId: string,
+    documentId: string,
+  ): Promise<SavedDocument | null> {
+    return this.prisma.savedDocument.findUnique({
+      where: {
+        userId_documentId: {
+          userId,
+          documentId,
+        },
+      },
+    });
+  }
+
+  // Chuyển đổi hoặc chuẩn hóa đã lưu tài liệu.
+  private serializeSavedDocument(
+    savedDocument: SavedDocument,
+  ): SavedCommunityDocumentResponse {
+    return {
+      documentId: savedDocument.documentId,
+      saved: true,
+      savedAt: savedDocument.savedAt,
+    };
+  }
+
+  // Kiểm tra điều kiện unique constraint lỗi.
+  private isUniqueConstraintError(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 'P2002'
+    );
+  }
 }
