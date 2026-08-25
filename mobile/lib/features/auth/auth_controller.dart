@@ -28,8 +28,7 @@ class AuthController {
         email: email.trim(),
         password: password,
       );
-      await credential.user?.reload();
-      if (_auth.currentUser?.emailVerified != true) {
+      if (credential.user?.emailVerified != true) {
         throw StateError('Verify your email before signing in.');
       }
       await _api.post('/auth/firebase-login');
@@ -108,12 +107,10 @@ class AuthController {
       GoogleAuthProvider.credential(idToken: idToken),
     );
     try {
-      await credential.user?.reload();
-      final refreshedUser = _auth.currentUser;
-      if (refreshedUser == null) {
+      final user = credential.user;
+      if (user == null) {
         throw StateError('Google session expired');
       }
-      await refreshedUser.getIdToken(true);
       await _api.post('/auth/firebase-login');
       return null;
     } on DioException catch (error) {

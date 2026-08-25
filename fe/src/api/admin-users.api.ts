@@ -1,4 +1,10 @@
-﻿import { getAuthToken } from '../features/auth/auth.utils';
+﻿import { getFirebaseAuth } from '../lib/firebase';
+
+// Lấy Firebase token tại thời điểm gửi request; không lưu token lâu dài trong
+// localStorage/sessionStorage vì backend production dùng session HttpOnly.
+async function getAuthToken(): Promise<string | undefined> {
+  return getFirebaseAuth().currentUser?.getIdToken();
+}
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 

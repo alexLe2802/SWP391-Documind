@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AuthProvider, RoleName, UserStatus } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { UploadedFile } from '../storage/storage.types';
 import { UsersService } from './users.service';
 
 describe('UsersService', () => {
@@ -26,14 +27,24 @@ describe('UsersService', () => {
   const auditLogService = {
     create: jest.fn(),
   };
+  const storageService = {
+    uploadObject: jest.fn(),
+    getObjectWithMetadata: jest.fn(),
+  };
+  const configService = {
+    get: jest.fn(),
+  };
   const service = new UsersService(
     prisma as unknown as PrismaService,
     auditLogService as never,
+    storageService as never,
+    configService as never,
   );
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
+
 
   it('returns the current user profile', async () => {
     prisma.user.findUnique.mockResolvedValue(user);
@@ -133,5 +144,78 @@ describe('UsersService', () => {
       BadRequestException,
     );
     expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('uploads avatar to storage and updates profile', async () => {
+    prisma.user.findUnique.mockResolvedValue(user);
+    storageService.uploadObject.mockResolvedValue({});
+    configService.get.mockReturnValue('https://pub.documind.icu');
+    prisma.user.update.mockResolvedValue({
+      ...user,
+      avatarUrl: 'https://pub.documind.icu/users/user-1/avatar.jpg?t=123',
+    });
+    auditLogService.create.mockResolvedValue({});
+
+    const fileBuffer = Buffer.from('fake-image-bytes');
+    const file: UploadedFile = {
+      buffer: fileBuffer,
+      mimetype: 'image/jpeg',
+      size: 1024,
+      originalname: 'photo.jpg',
+    };
+
+    const result = await service.uploadAvatar(
+      'user-1',
+      file,
+      'http://localhost:3001/api',
+    );
+
+    expect(storageService.uploadObject).toHaveBeenCalledWith({
+      objectKey: 'users/user-1/avatar.jpg',
+      body: fileBuffer,
+      contentType: 'image/jpeg',
+      contentLength: 1024,
+    });
+    expect(prisma.user.update).toHaveBeenCalled();
+    expect(auditLogService.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        action: 'user.avatar_updated',
+        targetType: 'User',
+        targetId: 'user-1',
+      }),
+    );
+    expect(result.avatarUrl).toContain('users/user-1/avatar.jpg');
+  });
+
+  it('retrieves stored avatar buffer', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      ...user,
+      avatarUrl: 'http://localhost:3001/api/users/user-1/avatar?t=123',
+    });
+    storageService.getObjectWithMetadata.mockResolvedValue({
+      buffer: Buffer.from('avatar-bytes'),
+      contentType: 'image/jpeg',
+    });
+
+    const result = await service.getAvatar('user-1');
+    expect(result).toEqual({
+      type: 'buffer',
+      buffer: Buffer.from('avatar-bytes'),
+      contentType: 'image/jpeg',
+    });
+  });
+
+  it('redirects for external avatar URL', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      ...user,
+      avatarUrl: 'https://lh3.googleusercontent.com/photo.jpg',
+    });
+
+    const result = await service.getAvatar('user-1');
+    expect(result).toEqual({
+      type: 'redirect',
+      url: 'https://lh3.googleusercontent.com/photo.jpg',
+    });
   });
 });

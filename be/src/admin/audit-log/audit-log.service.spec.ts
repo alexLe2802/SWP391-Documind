@@ -1,4 +1,4 @@
-﻿import { PrismaService } from '../../../prisma/prisma.service';
+﻿import { PrismaService } from '../../prisma/prisma.service';
 import { AuditLogService } from './audit-log.service';
 
 describe('AuditLogService', () => {

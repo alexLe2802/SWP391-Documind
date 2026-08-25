@@ -1,8 +1,8 @@
 ﻿import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { AdminUsersService } from './admin-users.service';
 import { AdminMutableUserStatus } from './dto/update-user-status.dto';
-import { RoleName, UserStatus, AuthProvider } from '../../../generated/prisma/client';
+import { RoleName, UserStatus, AuthProvider } from '../../generated/prisma/client';
 
 describe('AdminUsersService – updateStatus', () => {
   const mockPrisma = {

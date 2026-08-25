@@ -11,6 +11,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -254,8 +255,10 @@ export class StorageService {
     return this.createPresignedUrl(objectKeyOrOwnerId, 'inline');
   }
 
-  // Lấy dữ liệu object buffer.
-  async getObjectBuffer(objectKey: string): Promise<Buffer<ArrayBufferLike>> {
+  // Lấy dữ liệu object buffer kèm contentType.
+  async getObjectWithMetadata(
+    objectKey: string,
+  ): Promise<{ buffer: Buffer<ArrayBufferLike>; contentType?: string }> {
     try {
       const result: GetObjectCommandOutput = await this.client.send(
         new GetObjectCommand({
@@ -268,8 +271,22 @@ export class StorageService {
         throw new Error('Stored object body is empty');
       }
 
-      return this.toBuffer(result.Body);
+      return {
+        buffer: await this.toBuffer(result.Body),
+        contentType: result.ContentType,
+      };
     } catch (error) {
+      const candidate = error as {
+        name?: string;
+        $metadata?: { httpStatusCode?: number };
+      };
+      if (
+        candidate.name === 'NotFound' ||
+        candidate.name === 'NoSuchKey' ||
+        candidate.$metadata?.httpStatusCode === 404
+      ) {
+        throw new NotFoundException('Storage object not found');
+      }
       this.logStorageError('download', objectKey, error);
       throw new ServiceUnavailableException(
         'Document storage is temporarily unavailable',
@@ -277,6 +294,11 @@ export class StorageService {
     }
   }
 
+  // Lấy dữ liệu object buffer.
+  async getObjectBuffer(objectKey: string): Promise<Buffer<ArrayBufferLike>> {
+    const { buffer } = await this.getObjectWithMetadata(objectKey);
+    return buffer;
+  }
   // Thực hiện chức năng object exists.
   async objectExists(objectKey: string): Promise<boolean> {
     try {

@@ -34,22 +34,22 @@ DocuMind giải quyết bài toán quản lý, số hóa và khai thác kiến t
 
 ```text
 Documind/
-├── backend/                              # NestJS REST API Server
-│   ├── src/                              # Source code NestJS (Modules, Controllers, Services)
-│   ├── prisma/                           # Prisma ORM schema & migrations
-│   ├── docs/                             # Tài liệu API contracts, test guides, upload flow
-│   └── README.md                         # Hướng dẫn chi tiết backend
-├── frontend/                             # Next.js Web Application
-│   ├── src/ / pages/ / components/       # Giao diện Web, Auth flow, Admin panel
-│   └── README.md                         # Hướng dẫn chi tiết frontend
-├── mobile/                               # Flutter App (iOS & Android)
-│   ├── lib/                              # Source code Flutter (features: auth, chat, docs, home)
-│   ├── ios/ & android/                   # Native project configurations
-│   └── README.md                         # Hướng dẫn chi tiết mobile app
-├── scripts/                              # Scripts tự động hoá, kiểm tra nghiệp vụ
-├── DocuMind_Team_Reconstruction_Guide.md # Hướng dẫn tái dựng 5 Main Flow và phân công nhóm
-├── Documind_5_main_flows_mapping.xlsx    # Bảng phân công chi tiết công việc
-└── README.md                             # Tài liệu tổng quan dự án (file này)
+├── be/                                         # NestJS REST API Server
+│   ├── src/                                    # Source code NestJS (Modules, Controllers, Services)
+│   ├── prisma/                                 # Prisma ORM schema & migrations
+│   ├── docs/                                   # Tài liệu API contracts, test guides, upload flow
+│   └── README.md                               # Hướng dẫn chi tiết backend
+├── fe/                                         # Next.js Web Application
+│   ├── src/ / pages/ / components/             # Giao diện Web, Auth flow, Admin panel
+│   └── README.md                               # Hướng dẫn chi tiết frontend
+├── mobile/                                     # Flutter App (iOS & Android)
+│   ├── lib/                                    # Source code Flutter (features: auth, chat, docs, home)
+│   ├── ios/ & android/                         # Native project configurations
+│   └── README.md                               # Hướng dẫn chi tiết mobile app
+├── doc/
+|   └── Documind_5_main_flows_mapping.xlsx      # Bảng phân công chi tiết công việc
+├── scripts/                                    # Scripts tự động hoá, kiểm tra nghiệp vụ
+└── README.md                                   # Tài liệu tổng quan dự án (file này)
 ```
 
 ---
@@ -103,9 +103,9 @@ Documind/
 
 ### 1. Backend (NestJS)
 
-1. Di chuyển vào thư mục backend và chọn Node version:
+1. Di chuyển vào thư mục backend (`be`) và chọn Node version:
    ```bash
-   cd backend
+   cd be
    nvm use
    ```
 
@@ -138,9 +138,9 @@ Documind/
 
 ### 2. Frontend (Next.js / Web)
 
-1. Di chuyển vào thư mục frontend:
+1. Di chuyển vào thư mục frontend (`fe`):
    ```bash
-   cd frontend
+   cd fe
    ```
 
 2. Cài đặt dependencies:
@@ -194,8 +194,8 @@ Documind/
 
 | Module | File cấu hình mẫu | Biến quan trọng cần lưu ý |
 |---|---|---|
-| **Backend** | `backend/.env.example` | `DATABASE_URL`, `FIREBASE_PROJECT_ID`, `FIREBASE_PRIVATE_KEY`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `GEMINI_API_KEY` |
-| **Frontend** | `frontend/.env.example` | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` |
+| **Backend** | `be/.env.example` | `DATABASE_URL`, `FIREBASE_PROJECT_ID`, `FIREBASE_PRIVATE_KEY`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `GEMINI_API_KEY` |
+| **Frontend** | `fe/.env.example` | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` |
 | **Mobile** | `mobile/config.example.json` | `FIREBASE_IOS_APP_ID`, `FIREBASE_ANDROID_APP_ID`, `FIREBASE_API_KEY`, `BASE_URL` |
 
 ---
@@ -203,8 +203,8 @@ Documind/
 ## 📚 Tài liệu kỹ thuật liên quan
 
 - 📖 [Hướng dẫn tái dựng & chuyển giao theo 5 Main Flow](DocuMind_Team_Reconstruction_Guide.md)
-- 🔌 [Backend API Contract v0.3](backend/docs/api-contract-v0.3.md)
-- 🧪 [Backend API Testing Guide](backend/docs/api-testing-guide.md)
-- 📤 [Document Upload Workflow Integration](backend/docs/upload-workflow-integration-notes.md)
+- 🔌 [Backend API Contract v0.3](be/docs/api-contract-v0.3.md)
+- 🧪 [Backend API Testing Guide](be/docs/api-testing-guide.md)
+- 📤 [Document Upload Workflow Integration](be/docs/upload-workflow-integration-notes.md)
 - 📱 [Mobile Feature & Setup Guide](mobile/README.md)
-- 💻 [Frontend Setup Guide](frontend/README.md)
+- 💻 [Frontend Setup Guide](fe/README.md)

@@ -1,0 +1,374 @@
+/* ----------------------------------------------------
+   Admin Scoped Styling
+   Reuses existing design tokens from index.css
+---------------------------------------------------- */
+
+/* Admin Dashboard CSS Charts & Visualizations */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 1.5rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.chart-card h3 {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  color: var(--ink);
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 750;
+}
+
+/* Flex bars layout for category / subject charts */
+.chart-bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.chart-bar-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 36px;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+}
+
+.chart-bar-label {
+  color: var(--muted);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-bar-wrapper {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+}
+
+.chart-bar-value {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--amber);
+  transition: width 0.6s ease-out;
+}
+
+.chart-bar-count {
+  text-align: right;
+  font-weight: 750;
+  color: var(--ink);
+}
+
+/* Time Series SVG Sparkline / Bar styles */
+.sparkline-svg {
+  width: 100%;
+  height: 120px;
+  margin: 0.5rem 0;
+  overflow: visible;
+}
+
+.sparkline-line {
+  fill: none;
+  stroke: var(--amber);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sparkline-area {
+  fill: url(#amber-gradient);
+}
+
+.sparkline-point {
+  fill: var(--surface);
+  stroke: var(--amber);
+  stroke-width: 2;
+}
+
+.chart-x-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  padding: 0 4px;
+  color: var(--subtle);
+  font-size: 0.68rem;
+  font-family: var(--font-mono), monospace;
+}
+
+/* Modal dialog confirmations */
+.admin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  padding: 1.5rem;
+}
+
+.admin-modal {
+  width: min(100%, 520px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: admin-modal-fade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes admin-modal-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.admin-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 1.5rem;
+}
+
+.admin-modal-header h3 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-body), Arial, sans-serif;
+  font-weight: 750;
+  font-size: 1.25rem;
+}
+
+.admin-modal-close {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.25rem;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.admin-modal-close:hover {
+  background: #f1f5f9;
+  color: var(--ink);
+}
+
+.admin-modal-body {
+  padding: 1.5rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.admin-modal-body p {
+  margin: 0 0 1rem 0;
+}
+
+.admin-modal-body p:last-child {
+  margin-bottom: 0;
+}
+
+.admin-modal-body textarea {
+  width: 100%;
+  min-height: 90px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--ink);
+  background: var(--surface);
+  resize: vertical;
+  outline: none;
+}
+
+.admin-modal-body textarea:focus {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.13);
+}
+
+.moderation-reason-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.65rem;
+}
+
+.moderation-reason-presets button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 0.72rem;
+}
+
+.moderation-contexts {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 220px;
+  margin-top: 0.8rem;
+  overflow: auto;
+}
+
+.moderation-contexts blockquote {
+  margin: 0;
+  border-left: 3px solid var(--warning, #d97706);
+  padding: 0.6rem 0.75rem;
+  background: var(--surface-soft, #f8fafc);
+}
+
+.admin-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+}
+
+/* Pagination controls layout */
+.pagination-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.pagination-info {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.pagination-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 150ms ease-out;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: #fed7aa;
+  color: var(--ink);
+  background: var(--amber-soft);
+}
+
+.pagination-btn.active {
+  border-color: var(--amber);
+  color: var(--surface);
+  background: var(--amber);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Scoped badges for moderation status */
+.status-pill.hidden {
+  border-color: #cbd5e1;
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.status-pill.deleted {
+  border-color: #fca5a5;
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.status-pill.ai-completed {
+  border-color: #86efac;
+  color: var(--success);
+  background: var(--success-soft);
+}
+
+.status-pill.ai-processing {
+  border-color: #fde68a;
+  color: #b45309;
+  background: #fef3c7;
+}
+
+.status-pill.ai-failed {
+  border-color: #fca5a5;
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+/* Action button configurations */
+.btn-action-row {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.btn-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 150ms ease-out;
+}
+
+.btn-icon-action:hover {
+  border-color: var(--border-strong);
+  color: var(--ink);
+  background: #f8fafc;
+}
+
+.btn-icon-action.btn-danger:hover {
+  border-color: #fecaca;
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.btn-icon-action.btn-warn:hover {
+  border-color: #fde68a;
+  color: #d97706;
+  background: #fffbeb;
+}

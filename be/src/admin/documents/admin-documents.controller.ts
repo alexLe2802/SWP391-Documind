@@ -246,7 +246,9 @@ export class AdminDocumentsController {
       where: { id },
       data: {
         moderationStatus: ModerationStatus.REJECTED,
-        status: DocumentStatus.REJECTED,
+        // Production schema represents a rejected document as hidden; the
+        // moderationStatus field retains the explicit REJECTED decision.
+        status: DocumentStatus.HIDDEN,
         rejectionReason: body.reason,
         reviewedAt: new Date(),
         reviewedBy: admin.id,

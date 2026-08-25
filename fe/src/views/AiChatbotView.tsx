@@ -71,28 +71,10 @@ function CopyButton({ value }: { value: string }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// tokenizeText: TÁCH câu trả lời của AI thành các "token" xen kẽ giữa văn bản
-// thường và các đánh dấu trích dẫn (citation).
-//
-// Mục đích: AI trả lời dưới dạng chuỗi có chèn ký hiệu nguồn, ví dụ:
-//   "Consensus cần giả định lỗi [[cite: 1, 2]] và replication khác nhất quán [3]."
-// Ta cần biến các ký hiệu [n] đó thành NÚT BẤM (mở trích dẫn) thay vì text thô.
-//
-// Hàm nhận diện 2 định dạng citation:
-//   1. Canonical (chuẩn mới): [[cite: 1, 2]]  ← có thể nhiều số, cách nhau dấu phẩy
-//   2. Legacy (chuẩn cũ):     [1]  hoặc  [Source 3]  hoặc  [1, 2]
-//      (?!\() ở cuối regex = KHÔNG khớp nếu ngay sau ] là "(" → tránh nuốt nhầm
-//      cú pháp link Markdown dạng [text](url).
-//
-// Trả về: mảng token, mỗi token là { type:"text", content } HOẶC
-//         { type:"citation", numbers:[...] } (danh sách số nguồn).
-// ─────────────────────────────────────────────────────────────────────────
+// Chuyển đổi hoặc chuẩn hóa tokenize text.
 function tokenizeText(
   text: string,
 ): { type: "text" | "citation"; content?: string; numbers?: number[] }[] {
-  // Regex có group bao ngoài () nên String.split sẽ GIỮ LẠI phần khớp trong
-  // kết quả → mảng parts xen kẽ: [text, citation, text, citation, ...].
   const regex =
     /(\[\[cite:\s*\d+(?:\s*,\s*\d+)*\]\]|\[(?:Source\s+)?\d+(?:\s*,\s*\d+)*\](?!\())/gi;
   const parts = text.split(regex);
@@ -103,9 +85,8 @@ function tokenizeText(
   }[] = [];
 
   for (const part of parts) {
-    if (!part) continue; // split có thể sinh chuỗi rỗng → bỏ qua
+    if (!part) continue;
 
-    // (1) Thử khớp định dạng canonical [[cite: ...]] và rút các con số ra.
     const canonicalMatch = part.match(
       /^\[\[cite:\s*(\d+(?:\s*,\s*\d+)*)\]\]$/i,
     );
@@ -113,12 +94,11 @@ function tokenizeText(
       const numbers = canonicalMatch[1]
         .split(",")
         .map((num) => parseInt(num.trim(), 10))
-        .filter((n) => !isNaN(n)); // loại phần tử parse hỏng
+        .filter((n) => !isNaN(n));
       tokens.push({ type: "citation", numbers });
       continue;
     }
 
-    // (2) Thử khớp định dạng legacy [n] / [Source n].
     const legacyMatch = part.match(/^\[(?:Source\s+)?(\d+(?:\s*,\s*\d+)*)\]$/i);
     if (legacyMatch) {
       const numbers = legacyMatch[1]
@@ -129,23 +109,13 @@ function tokenizeText(
       continue;
     }
 
-    // (3) Không khớp citation nào → đây là văn bản thường.
     tokens.push({ type: "text", content: part });
   }
 
   return tokens;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// parseTextForCitations: biến 1 chuỗi thành React node, trong đó mỗi ký hiệu
-// [n] được render thành NÚT BẤM (nếu tìm thấy citation tương ứng trong mảng
-// `citations`) để khi click sẽ mở drawer xem nguồn. Nếu không tìm thấy nguồn
-// (AI bịa số [n] không tồn tại) → chỉ hiển thị [n] dạng text tĩnh.
-//
-// - Dùng tokenizeText để tách text/citation.
-// - Với token citation gồm nhiều số [1,2] → render từng nút liền nhau.
-// - title của nút = tên tài liệu (tooltip khi hover).
-// ─────────────────────────────────────────────────────────────────────────
+// Chuyển đổi hoặc chuẩn hóa text for citations.
 function parseTextForCitations(
   text: string,
   citations: Citation[] = [],
@@ -184,27 +154,13 @@ function parseTextForCitations(
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// renderMessageContent: render nội dung 1 tin nhắn AI ra JSX hoàn chỉnh.
-//
-// Kết hợp 2 lớp:
-//   Lớp 1 — Markdown: dùng ReactMarkdown + remarkGfm để hỗ trợ heading, list,
-//           BẢNG (GFM table), code block (kèm nút Copy), inline code...
-//           → mỗi thẻ HTML được custom lại className (Tailwind) cho đẹp & responsive.
-//   Lớp 2 — Citation: với MỌI node text bên trong Markdown, gọi renderChildren
-//           để quét lại và biến [n] thành nút bấm (parseTextForCitations).
-//
-// Vì sao cần renderChildren lồng vào? ReactMarkdown chỉ hiểu Markdown, KHÔNG
-// hiểu cú pháp [[cite:n]] của ta → phải tự hậu xử lý phần text con của từng thẻ.
-// ─────────────────────────────────────────────────────────────────────────
 // Hiển thị hoặc mở tin nhắn nội dung.
 function renderMessageContent(
   content: string,
   citations: Citation[] = [],
   onCitationClick?: (citation: Citation) => void,
 ) {
-  // Duyệt các node con của 1 thẻ Markdown: nếu là chuỗi thì quét citation,
-  // nếu là element (vd <strong>) thì giữ nguyên.
+  // Hiển thị hoặc mở children.
   const renderChildren = (children: React.ReactNode): React.ReactNode => {
     return React.Children.map(children, (child) => {
       if (typeof child === "string") {
@@ -311,22 +267,6 @@ function renderMessageContent(
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// AiChatbotView — MÀN HÌNH CHATBOT CHÍNH của MF3 (workspace 3 cột).
-//
-// Layout:
-//   [Sidebar TRÁI]  Danh sách "Tài liệu Nguồn": tìm kiếm, lọc môn/loại file,
-//                   tick chọn file làm phạm vi hỏi.
-//   [Giữa]          Khung chat: chọn chế độ (thư viện / file đã chọn), lịch sử,
-//                   luồng tin nhắn (render Markdown + citation), ô nhập + gửi/dừng.
-//   [Sidebar PHẢI]  Nguồn cho câu trả lời (mode thư viện) hoặc file trong phạm
-//                   vi (mode file đã chọn).
-//   [Drawer]        Xem chi tiết 1 trích dẫn (đoạn trích, vị trí, tải tài liệu).
-//
-// Luồng chính: người dùng nhập câu hỏi → submitQuestion() gọi askLibraryStream
-// → cập nhật dần bong bóng AI (nguồn + nội dung) → lưu vào state messages.
-// Ngữ cảnh (mode, file/môn đã chọn) được bền hoá qua sessionStorage & URL param.
-// ═══════════════════════════════════════════════════════════════════════════
 // Hiển thị giao diện ai chatbot view.
 export function AiChatbotView() {
   const router = useRouter();
@@ -338,16 +278,11 @@ export function AiChatbotView() {
   );
 
   // 1. Fetch Library Documents (Uploaded & Saved from Community)
-  // documents = danh sách tài liệu hiển thị ở sidebar trái. Gộp 2 nguồn:
-  //   (a) tài liệu do người dùng upload, (b) tài liệu đã lưu từ cộng đồng
-  //       (được đánh dấu isCommunitySaved để hiện badge "Cộng đồng").
   const [documents, setDocuments] = useState<
     (LibraryDocument & { isCommunitySaved?: boolean })[]
   >([]);
 
   useEffect(() => {
-    // Cờ `active`: chống cập nhật state sau khi component đã unmount
-    // (tránh cảnh báo "set state on unmounted component" khi rời trang giữa chừng).
     let active = true;
     Promise.all([
       fetchLibraryDocuments({ limit: 100 }),
@@ -358,9 +293,6 @@ export function AiChatbotView() {
       .then(([uploadedResult, savedResult]) => {
         if (!active) return;
 
-        // Gộp bằng Map theo id để KHỬ TRÙNG: 1 tài liệu vừa upload vừa lưu
-        // cộng đồng chỉ xuất hiện 1 lần. Ghi saved SAU nên nó ghi đè và gắn cờ
-        // isCommunitySaved cho các tài liệu cộng đồng.
         const mergedMap = new Map<
           string,
           LibraryDocument & { isCommunitySaved?: boolean }
@@ -385,13 +317,8 @@ export function AiChatbotView() {
   }, []);
 
   // 2. React State
-  // activeMode: 2 chế độ truy hồi.
-  //   "MY_LIBRARY"       → AI tự tìm trong TOÀN BỘ thư viện.
-  //   "SELECTED_SOURCES" → AI chỉ tìm trong các file người dùng đã tick chọn.
   const [activeMode, setActiveMode] = useState<ActiveMode>("MY_LIBRARY");
-  // selectedDocumentIds: các file được tick (phạm vi hỏi ở chế độ SELECTED_SOURCES).
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
-  // currentDocumentId: file đang "focus" (card active/mở drawer), khác với danh sách tick.
   const [currentDocumentId, setCurrentDocumentId] = useState<string>("");
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -412,9 +339,6 @@ export function AiChatbotView() {
   );
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState(false);
-  // Khôi phục hội thoại từ URL: nếu vào trang với ?session=<id> (vd click từ
-  // thông báo/lịch sử ở nơi khác) → tự tải lại tin nhắn của phiên đó và lấy
-  // nguồn của tin AI cuối cùng có nguồn để đổ vào panel phải.
   useEffect(() => {
     const requestedSessionId = searchParams?.get("session");
     if (!requestedSessionId) return;
@@ -439,10 +363,6 @@ export function AiChatbotView() {
       active = false;
     };
   }, [searchParams]);
-  // visibleSources: lọc bớt nguồn liên quan thấp trước khi hiển thị ở sidebar phải.
-  // Giữ lại nguồn có score null ("tài liệu gốc") hoặc score >= 0.62.
-  // Ngưỡng 0.62 khớp hằng MIN_METADATA_RELEVANCE_SCORE bên backend → đổi 1 bên
-  // thì phải đồng bộ bên còn lại.
   const visibleSources = useMemo(
     () =>
       sources.filter(
@@ -552,12 +472,6 @@ export function AiChatbotView() {
   }, []);
 
   // 4. Load sessionStorage on mount (hydration-safe)
-  // Khôi phục ngữ cảnh workspace khi mở lại trang. Ưu tiên tham số trên URL
-  // (?scope=document&document=<id>&q=<...>) — thường là "deep link" từ trang
-  // chi tiết tài liệu bấm "Hỏi tài liệu này"; nếu không có URL param thì đọc
-  // lại lựa chọn đã lưu trong sessionStorage (mode, file đã chọn, môn học...).
-  // Đặt trong useEffect (không phải lúc khởi tạo state) để tránh lệch
-  // hydration giữa server và client của Next.js.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requestedDocument = params.get("document");
@@ -620,8 +534,6 @@ export function AiChatbotView() {
   }, [documents]);
 
   // 5. Persist state to sessionStorage
-  // Mỗi khi các lựa chọn thay đổi → lưu lại để F5 / quay lại trang không mất
-  // ngữ cảnh (mode, file đã chọn, môn học, file đang focus).
   useEffect(() => {
     sessionStorage.setItem("documind.workspace.activeMode", activeMode);
   }, [activeMode]);
@@ -651,8 +563,6 @@ export function AiChatbotView() {
   }, [messages, isLoading]);
 
   // Filtered document list
-  // Danh sách tài liệu sau khi áp 3 bộ lọc của sidebar trái: từ khóa tìm kiếm
-  // (khớp tiêu đề/môn/danh mục) + loại file + môn học. Rỗng bộ lọc = khớp tất cả.
   const filteredDocuments = useMemo(() => {
     return documents.filter((doc) => {
       const q = searchQuery.toLowerCase();
@@ -778,10 +688,7 @@ export function AiChatbotView() {
     }
   };
 
-  // loadSession: tải lại toàn bộ tin nhắn của 1 phiên trong lịch sử và hiển thị.
-  // Lấy nguồn của tin AI cuối cùng CÓ nguồn để đổ vào panel phải. Cố tình đặt
-  // lại lastScopeKey = undefined để câu hỏi tiếp theo trong phiên cũ không bị
-  // logic reset-scope ép tạo phiên mới.
+  // Lấy dữ liệu phiên.
   const loadSession = async (session: ChatSessionSummary) => {
     setHistoryOpen(false);
     setIsLoading(true);
@@ -821,8 +728,7 @@ export function AiChatbotView() {
     }
   };
 
-  // startNewChat: bắt đầu hội thoại mới — xóa sessionId, tin nhắn, nguồn và
-  // reset vân tay phạm vi (giữ nguyên các file/bộ lọc đã chọn).
+  // Thực hiện chức năng start new chat.
   const startNewChat = () => {
     setHistoryOpen(false);
     setSessionId(undefined);
@@ -832,19 +738,10 @@ export function AiChatbotView() {
   };
 
   // 7. Submit question
-  // Hàm xử lý khi người dùng gửi câu hỏi. Các bước lớn:
-  //   (1) chặn input rỗng / đang tải; hủy request cũ nếu còn.
-  //   (2) push tin USER + tạo bong bóng AI "pending" (skeleton).
-  //   (3) guard: chế độ chọn file mà chưa chọn file nào → nhắc, dừng.
-  //   (4) tính scopeKey → reset session nếu phạm vi đổi (xem giải thích dưới).
-  //   (5) gọi askLibraryStream với handler onSources/onDelta để cập nhật dần.
-  //   (6) xử lý abort / lỗi ở catch; tắt loading ở finally.
   const submitQuestion = async () => {
     const trimmed = question.trim();
     if (!trimmed || isLoading) return;
 
-    // Mỗi câu hỏi có 1 AbortController riêng. Hủy request trước đó (nếu còn)
-    // để không có 2 luồng trả lời chồng lên nhau.
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -864,8 +761,6 @@ export function AiChatbotView() {
     setQuestion("");
     setIsLoading(true);
 
-    // Guard: ở chế độ "file đã chọn" nhưng chưa tick file nào → không gọi API,
-    // chỉ chèn 1 tin AI nhắc chọn tài liệu (delay 500ms cho tự nhiên).
     if (activeMode === "SELECTED_SOURCES" && selectedDocumentIds.length === 0) {
       setTimeout(() => {
         setMessages((prev) => [
@@ -886,13 +781,8 @@ export function AiChatbotView() {
       return;
     }
 
-    // ── RESET SESSION KHI ĐỔI PHẠM VI ──────────────────────────────────
-    // scopeKey = "vân tay" mô tả phạm vi truy hồi hiện tại:
-    //   - SELECTED_SOURCES: danh sách id file đã chọn (sort để ổn định thứ tự).
-    //   - MY_LIBRARY:       tổ hợp môn học đã chọn + loại file.
-    // Nếu phạm vi khác lần hỏi trước (lastScopeKey !== scopeKey) → gửi
-    // sessionId = undefined để backend TẠO PHIÊN MỚI, tránh việc câu hỏi trên
-    // phạm vi mới lại kế thừa lịch sử/ngữ cảnh của phạm vi cũ.
+    // Reset the session whenever the retrieval scope changed since the last
+    // question, so a new scope never inherits the previous conversation.
     const scopeKey =
       activeMode === "SELECTED_SOURCES"
         ? [...selectedDocumentIds].sort().join(",")
@@ -902,16 +792,12 @@ export function AiChatbotView() {
       lastScopeKey !== undefined && lastScopeKey !== scopeKey
         ? undefined
         : sessionId;
-    // Đồng bộ state sessionId để UI (vd highlight lịch sử) phản ánh phiên mới.
     if (requestSessionId === undefined && sessionId !== undefined) {
       setSessionId(undefined);
     }
     lastScopeKeyRef.current[activeMode] = scopeKey;
 
-    // hasEmittedToken: đã nhận được ít nhất 1 mẩu answer chưa → quyết định cách
-    // xử lý khi bị abort/lỗi (giữ phần đã stream vs. xóa bong bóng, xem catch).
     let hasEmittedToken = false;
-    // Id tạm của bong bóng AI đang chờ → dùng để cập nhật đúng tin nhắn đó.
     const pendingMessageId = crypto.randomUUID();
 
     try {
@@ -943,8 +829,6 @@ export function AiChatbotView() {
                 },
         },
         {
-          // onSources: backend gửi danh sách nguồn (đến trước câu trả lời) →
-          // gắn ngay vào bong bóng AI để hiển thị thẻ trích dẫn.
           onSources: (nextSources) => {
             setMessages((prev) =>
               prev.map((message) =>
@@ -954,8 +838,6 @@ export function AiChatbotView() {
               ),
             );
           },
-          // onDelta: mỗi mẩu text mới → NỐI vào nội dung bong bóng, chuyển
-          // trạng thái sang "streaming". (Hiện là pseudo-stream: nhận cả câu 1 lần.)
           onDelta: (delta) => {
             hasEmittedToken = true;
             setMessages((prev) =>
@@ -991,12 +873,10 @@ export function AiChatbotView() {
         ),
       );
     } catch (err: unknown) {
-      // Phân biệt "người dùng bấm Dừng" (abort) với lỗi thật sự.
       const isAborted =
         (err instanceof Error && err.name === "AbortError") ||
         controller.signal.aborted;
 
-      // Nếu ĐÃ stream được một phần → giữ lại phần đó, chỉ đánh dấu bị ngắt.
       if (hasEmittedToken) {
         setMessages((prev) =>
           prev.map((message) =>
@@ -1012,8 +892,6 @@ export function AiChatbotView() {
           ),
         );
       } else {
-        // Chưa stream được gì → bỏ bong bóng pending, thay bằng tin báo
-        // "đã hủy" (nếu abort) hoặc tin lỗi REQUEST_FAILED.
         setMessages((prev) => [
           ...prev.filter((message) => message.id !== pendingMessageId),
           {
@@ -1040,11 +918,7 @@ export function AiChatbotView() {
     }
   };
 
-  // renderRelevanceBadge: hiển thị nhãn độ liên quan của nguồn theo điểm số.
-  //   null   → "Tài liệu gốc" (nguồn nền, không phải kết quả vector search)
-  //   >=0.85 → "Độ liên quan cao"
-  //   >=0.70 → "Có liên quan"
-  //   còn lại→ "Nguồn bổ sung"
+  // Hiển thị hoặc mở relevance badge.
   const renderRelevanceBadge = (score: number | null) => {
     if (score === null) {
       return (
@@ -1122,13 +996,7 @@ export function AiChatbotView() {
     );
   };
 
-  // getAnswerIssueCopy: chuyển trạng thái/mã lỗi của 1 tin AI thành khối cảnh
-  // báo thân thiện (tiêu đề + mô tả song ngữ) hiển thị phía trên nội dung.
-  // Trả về null nếu tin bình thường (không có vấn đề gì cần cảnh báo).
-  //   - REQUEST_FAILED          → không nhận được phản hồi AI.
-  //   - FALLBACK_WITH_SOURCES   → AI lỗi nhưng vẫn có nguồn; mô tả theo mã lỗi
-  //                               Gemini cụ thể (thiếu key, rate limit, timeout...).
-  //   - NO_SOURCES              → không tìm thấy tài liệu phù hợp.
+  // Lấy dữ liệu answer issue copy.
   const getAnswerIssueCopy = (msg: ChatMessage) => {
     if (msg.errorCode === "REQUEST_FAILED") {
       return {

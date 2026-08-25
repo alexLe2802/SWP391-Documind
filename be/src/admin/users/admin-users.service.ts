@@ -3,8 +3,8 @@
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, RoleName, User, UserStatus } from '../../../generated/prisma/client';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { Prisma, RoleName, User, UserStatus } from '../../generated/prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
 import { AdminMutableUserStatus } from './dto/update-user-status.dto';
 

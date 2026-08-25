@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { extname } from 'path';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import {
   DocumentStatus,
@@ -133,12 +134,18 @@ export class CommunityService {
         id: true,
         storagePath: true,
         fileType: true,
+        fileName: true,
       },
     });
 
     if (!document) {
       throw new NotFoundException('Community document not found');
     }
+
+    const isOffice = this.isOfficeDocument(
+      document.fileType,
+      document.fileName,
+    );
 
     // Tạo URL tạm thời để truy cập object an toàn từ Cloudflare R2.
     const previewUrl = await this.storage.createObjectPreviewUrl(
@@ -152,7 +159,27 @@ export class CommunityService {
       data: { viewCount: { increment: 1 } },
     });
 
-    return previewUrl;
+    return {
+      ...previewUrl,
+      contentType: document.fileType,
+      fallbackToOfficeViewer: isOffice,
+    };
+  }
+
+  // Kiểm tra điều kiện office tài liệu.
+  private isOfficeDocument(mimeType: string, fileName: string): boolean {
+    const extension = extname(fileName).toLowerCase();
+    return (
+      [
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/msword',
+        'application/vnd.ms-excel',
+        'application/vnd.ms-powerpoint',
+      ].includes(mimeType) ||
+      ['.docx', '.pptx', '.xlsx', '.doc', '.ppt', '.xls'].includes(extension)
+    );
   }
 
   // Lấy dữ liệu tài liệu.

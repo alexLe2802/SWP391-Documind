@@ -4,7 +4,7 @@
   ExtractionStatus,
   ModerationFlag,
   ModerationStatus,
-} from '../../../generated/prisma/client';
+} from '../../generated/prisma/client';
 import { AdminDocumentsController } from './admin-documents.controller';
 
 describe('AdminDocumentsController – moderation actions', () => {
@@ -124,7 +124,7 @@ describe('AdminDocumentsController – moderation actions', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           moderationStatus: ModerationStatus.REJECTED,
-          status: DocumentStatus.REJECTED,
+          status: DocumentStatus.HIDDEN,
           rejectionReason: 'Duplicate content',
         }),
       }),
