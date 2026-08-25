@@ -194,6 +194,7 @@ export class DocumentsService {
     };
   }
 
+  // Security: Ensure strict tenant isolation for document access
   // Lấy một bản ghi dữ liệu phù hợp.
   async findOne(id: string, ownerId: string): Promise<UiReadyDocument> {
     const document = await this.prisma.document.findFirst({
