@@ -101,3 +101,101 @@ export class SavedDocumentsService {
       },
     };
   }
+
+  // Chuyển đổi hoặc chuẩn hóa where.
+  private buildWhere(
+    userId: string,
+    query: SavedDocumentQueryDto,
+  ): Prisma.SavedDocumentWhereInput {
+    const documentFilters: Prisma.DocumentWhereInput[] = [
+      {
+        status: DocumentStatus.ACTIVE,
+        OR: [
+          {
+            visibility: DocumentVisibility.PUBLIC,
+            moderationStatus: ModerationStatus.APPROVED,
+          },
+          { ownerId: userId },
+        ],
+      },
+    ];
+
+    if (query.subjectId) documentFilters.push({ subjectId: query.subjectId });
+    if (query.categoryId) {
+      documentFilters.push({ categoryId: query.categoryId });
+    }
+    if (query.fileType) {
+      documentFilters.push({ fileType: this.toMimeType(query.fileType) });
+    }
+    if (query.aiStatus) {
+      documentFilters.push({ extractionStatus: query.aiStatus });
+    }
+    if (query.tagIds?.length) {
+      documentFilters.push({
+        tags: { some: { tagId: { in: query.tagIds } } },
+      });
+    }
+    if (query.search) {
+      documentFilters.push({
+        OR: [
+          { title: { contains: query.search, mode: 'insensitive' } },
+          { description: { contains: query.search, mode: 'insensitive' } },
+          { fileName: { contains: query.search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    return {
+      userId,
+      document: {
+        AND: documentFilters,
+      },
+    };
+  }
+
+  // Chuyển đổi hoặc chuẩn hóa order by.
+  private buildOrderBy(
+    query: SavedDocumentQueryDto,
+  ): Prisma.SavedDocumentOrderByWithRelationInput[] {
+    const sortBy = query.sortBy ?? 'savedAt';
+    const sortOrder = query.sortOrder ?? 'desc';
+
+    if (sortBy === 'savedAt') {
+      return [{ savedAt: sortOrder }, { id: 'desc' }];
+    }
+
+    return [{ document: { [sortBy]: sortOrder } }, { id: 'desc' }];
+  }
+
+  // Chuyển đổi hoặc chuẩn hóa serialize.
+  private serialize(
+    savedDocument: SavedDocumentPayload,
+    currentUserId: string,
+  ): SavedDocumentItem {
+    const { content, ...document } = savedDocument.document;
+
+    return {
+      ...document,
+      fileSize: savedDocument.document.fileSize.toString(),
+      aiStatus: savedDocument.document.extractionStatus,
+      summary: content?.contentSummary ?? null,
+      saved: true,
+      owned: savedDocument.document.ownerId === currentUserId,
+      savedAt: savedDocument.savedAt,
+    };
+  }
+
+  // Chuyển đổi hoặc chuẩn hóa mime type.
+  private toMimeType(
+    fileType: NonNullable<SavedDocumentQueryDto['fileType']>,
+  ): string {
+    const mimeTypes = {
+      PDF: 'application/pdf',
+      DOCX: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      PPTX: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      XLSX: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    } as const;
+
+    return mimeTypes[fileType];
+  }
+}
