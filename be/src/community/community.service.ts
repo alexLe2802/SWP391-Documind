@@ -193,5 +193,161 @@ export class CommunityService {
       },
     };
   }
+  // Tạo hoặc lưu tài liệu.
+  async saveDocument(
+    documentId: string,
+    userId: string,
+  ): Promise<SavedCommunityDocumentResponse> {
+    const document = await this.prisma.document.findFirst({
+      where: {
+        id: documentId,
+        visibility: DocumentVisibility.PUBLIC,
+        moderationStatus: ModerationStatus.APPROVED,
+        status: DocumentStatus.ACTIVE,
+      },
+      select: { id: true, ownerId: true },
+    });
+
+    if (!document) {
+      throw new NotFoundException('Community document not found');
+    }
+
+    if (document.ownerId === userId) {
+      throw new BadRequestException('Cannot save your own community document');
+    }
+
+    const existingSavedDocument = await this.findSavedDocument(
+      userId,
+      documentId,
+    );
+    if (existingSavedDocument) {
+      return this.serializeSavedDocument(existingSavedDocument);
+    }
+
+    try {
+      // Thực hiện các thay đổi liên quan trong cùng một database transaction.
+      const savedDocument = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.savedDocument.create({
+          data: { userId, documentId },
+        });
+        await tx.document.update({
+          where: { id: documentId },
+          data: { saveCount: { increment: 1 } },
+        });
+
+        return created;
+      });
+      await this.auditLogService.logSavePublicDocument(userId, documentId);
+
+      return this.serializeSavedDocument(savedDocument);
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        const savedDocument = await this.findSavedDocument(userId, documentId);
+        if (savedDocument) {
+          return this.serializeSavedDocument(savedDocument);
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  // Thực hiện chức năng unsave tài liệu.
+  async unsaveDocument(documentId: string, userId: string): Promise<void> {
+    const document = await this.prisma.document.findFirst({
+      where: {
+        id: documentId,
+        visibility: DocumentVisibility.PUBLIC,
+        moderationStatus: ModerationStatus.APPROVED,
+        status: DocumentStatus.ACTIVE,
+      },
+      select: { id: true },
+    });
+
+    if (!document) {
+      throw new NotFoundException('Community document not found');
+    }
+
+    const savedDocument = await this.findSavedDocument(userId, documentId);
+    if (!savedDocument) {
+      return;
+    }
+
+    // Thực hiện các thay đổi liên quan trong cùng một database transaction.
+    await this.prisma.$transaction(async (tx) => {
+      await tx.savedDocument.delete({
+        where: { id: savedDocument.id },
+      });
+      await tx.document.update({
+        where: { id: documentId },
+        data: { saveCount: { decrement: 1 } },
+      });
+    });
+
+    await this.auditLogService.create({
+      userId,
+      action: 'PUBLIC_DOCUMENT_UNSAVE',
+      targetType: 'DOCUMENT',
+      targetId: documentId,
+    });
+  }
+
+  // Chuyển đổi hoặc chuẩn hóa where.
+  private buildWhere(
+    query: CommunityDocumentQueryDto,
+  ): Prisma.DocumentWhereInput {
+    const filters: Prisma.DocumentWhereInput[] = [
+      {
+        visibility: DocumentVisibility.PUBLIC,
+        moderationStatus: ModerationStatus.APPROVED,
+        status: DocumentStatus.ACTIVE,
+      },
+    ];
+
+    if (query.subjectId) filters.push({ subjectId: query.subjectId });
+    if (query.categoryId) filters.push({ categoryId: query.categoryId });
+    if (query.fileType) {
+      filters.push({
+        fileType: {
+          contains: communityFileTypeMimePatterns[query.fileType],
+          mode: 'insensitive',
+        },
+      });
+    }
+    if (query.tagIds?.length) {
+      filters.push({ tags: { some: { tagId: { in: query.tagIds } } } });
+    }
+    if (query.q) {
+      filters.push({
+        OR: [
+          { title: { contains: query.q, mode: 'insensitive' } },
+          { description: { contains: query.q, mode: 'insensitive' } },
+          { fileName: { contains: query.q, mode: 'insensitive' } },
+          {
+            subject: {
+              name: { contains: query.q, mode: 'insensitive' },
+            },
+          },
+          {
+            category: {
+              name: { contains: query.q, mode: 'insensitive' },
+            },
+          },
+          {
+            tags: {
+              some: {
+                tag: {
+                  name: { contains: query.q, mode: 'insensitive' },
+                },
+              },
+            },
+          },
+        ],
+      });
+    }
+
+    return { AND: filters };
+  }
+
 
 }
