@@ -1,10 +1,5 @@
-﻿import { Module } from '@nestjs/common';
-import { AuthModule } from '../../auth/auth.module';
-import { PrismaModule } from '../../prisma/prisma.module';
-import { AdminDocumentsController } from './admin-documents.controller';
-
-@Module({
-  imports: [AuthModule, PrismaModule],
-  controllers: [AdminDocumentsController],
-})
-export class AdminDocumentsModule {}
+/**
+ * Production registers document moderation through AdminModule. This alias keeps
+ * the reconstructed import path valid without registering duplicate controllers.
+ */
+export { AdminModule as AdminDocumentsModule } from '../admin.module';

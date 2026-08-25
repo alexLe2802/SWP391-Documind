@@ -1,13 +1,5 @@
-﻿import { Module } from '@nestjs/common';
-import { AuthModule } from '../../auth/auth.module';
-import { PrismaModule } from '../../prisma/prisma.module';
-import { AdminUsersController } from './admin-users.controller';
-import { AdminUsersService } from './admin-users.service';
-
-@Module({
-  imports: [AuthModule, PrismaModule],
-  controllers: [AdminUsersController],
-  providers: [AdminUsersService],
-  exports: [AdminUsersService],
-})
-export class AdminUsersModule {}
+/**
+ * Production registers admin-user providers through AdminModule. This alias keeps
+ * the reconstructed import path valid without maintaining a second DI graph.
+ */
+export { AdminModule as AdminUsersModule } from '../admin.module';

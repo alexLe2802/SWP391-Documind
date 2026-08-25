@@ -1,11 +1,2 @@
-import { IsDateString, IsOptional } from 'class-validator';
-
-export class DocumentsByCategoryQueryDto {
-  @IsOptional()
-  @IsDateString()
-  from?: string;
-
-  @IsOptional()
-  @IsDateString()
-  to?: string;
-}
+/** Re-export the current production DTO while preserving the member-owned path. */
+export { DocumentsByCategoryQueryDto } from '../../../dashboard/dto/documents-by-category-query.dto';

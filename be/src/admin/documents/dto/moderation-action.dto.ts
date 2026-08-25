@@ -1,4 +1,8 @@
-﻿import { IsBoolean, IsOptional, IsString } from 'class-validator';
+﻿/**
+ * Compatibility DTOs matching the current production hide/reject endpoints.
+ * Rejection remains explicit while DocumentStatus uses HIDDEN in the database.
+ */
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class HideDocumentDto {

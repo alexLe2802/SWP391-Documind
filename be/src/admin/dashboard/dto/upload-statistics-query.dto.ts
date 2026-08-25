@@ -1,15 +1,2 @@
-import { IsDateString, IsIn, IsOptional } from 'class-validator';
-
-export class UploadStatisticsQueryDto {
-  @IsOptional()
-  @IsDateString()
-  from?: string;
-
-  @IsOptional()
-  @IsDateString()
-  to?: string;
-
-  @IsOptional()
-  @IsIn(['day', 'week', 'month'])
-  groupBy?: 'day' | 'week' | 'month';
-}
+/** Re-export the current production DTO while preserving the member-owned path. */
+export { UploadStatisticsQueryDto } from '../../../dashboard/dto/upload-statistics-query.dto';
