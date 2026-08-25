@@ -136,7 +136,6 @@ export function SavedView() {
     query || subject || fileType || sort !== "newest",
   );
 
-  
   // Xóa hoặc giải phóng filters.
   function clearFilters() {
     setQuery("");
@@ -206,7 +205,6 @@ export function SavedView() {
     }
   }
 
-  
   // Xử lý sự kiện tải xuống.
   async function handleDownload(document: LibraryDocument) {
     setErrorMessage("");
