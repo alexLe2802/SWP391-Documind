@@ -1,4 +1,8 @@
-﻿import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+﻿/**
+ * Compatibility DTO for the member-owned path. Its fields mirror the query
+ * contract embedded in the current production AdminDocumentsController.
+ */
+import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {

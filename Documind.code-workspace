@@ -1,0 +1,39 @@
+{
+  "folders": [
+    {
+      "name": "DocuMind",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "dart.flutterSdkPath": ".tools/flutter-sdk/flutter",
+    "typescript.tsdk": "frontend/node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "eslint.workingDirectories": [
+      {
+        "directory": "frontend",
+        "changeProcessCWD": true
+      },
+      {
+        "directory": "backend",
+        "changeProcessCWD": true
+      }
+    ],
+    "files.exclude": {
+      "**/.next": true,
+      "**/.open-next": true,
+      "**/dist": true,
+      "frontend/ios/App/App/public": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "prisma.prisma",
+      "ms-vscode.vscode-typescript-next",
+      "dart-code.dart-code",
+      "dart-code.flutter"
+    ]
+  }
+}

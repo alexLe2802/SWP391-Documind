@@ -30,12 +30,7 @@ export function askLibrary(payload: {
   });
 }
 
-// askLibraryStream: PSEUDO-STREAM (giả lập streaming).
-// Hiện tại KHÔNG gọi SSE thật — chỉ gọi askLibrary() (chờ trọn câu trả lời)
-// rồi phát nguồn 1 lần qua onSources và phát TOÀN BỘ answer 1 lần qua onDelta.
-// Thiết kế sẵn 2 handler + AbortSignal để khi backend bật SSE thật, chỉ cần
-// sửa DUY NHẤT hàm này (đọc text/event-stream) mà không phải đổi AiChatbotView.
-// Kiểm tra signal.aborted trước & sau request để hỗ trợ nút "Dừng".
+// Thực hiện chức năng ask library stream.
 export async function askLibraryStream(
   payload: {
     question: string;

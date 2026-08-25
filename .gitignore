@@ -1,17 +1,20 @@
 # Dependencies and build outputs
 node_modules/
+**/node_modules*/
 .next/
 dist/
 coverage/
 *.tsbuildinfo
-be/src/generated/
 
 # Local environment and credentials
 .env
 .env.*
 !.env.example
-backend/.env
-frontend/.env
+be/.env
+fe/.env
+be/be.env
+fe/fe.env
+be/src/generated/
 
 # Local tooling and editor state
 .tools/
@@ -30,4 +33,7 @@ skills-lock.json
 # OS files
 .DS_Store
 Thumbs.db
-backend/backups/
+be/backups/
+
+# Local duplicate documentation folder from the production workspace.
+/doc/

@@ -12,6 +12,7 @@ vi.mock('firebase/auth', () => ({
 vi.mock('../../lib/firebase', () => ({
   getFirebaseAuth: () => ({ currentUser: null }),
   getGoogleAuthProvider: vi.fn(),
+  prepareFirebaseAuth: vi.fn().mockResolvedValue({ currentUser: null }),
 }))
 
 vi.mock('../../api/auth.api', () => ({
@@ -45,7 +46,7 @@ describe('AuthProvider session restore', () => {
     render(<AuthProvider><SessionProbe /></AuthProvider>)
     expect(screen.getByText('checking')).toBeInTheDocument()
 
-    act(() => vi.advanceTimersByTime(8_000))
+    act(() => vi.advanceTimersByTime(3_000))
 
     expect(screen.getByText('signed-out')).toBeInTheDocument()
   })

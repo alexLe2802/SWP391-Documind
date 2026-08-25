@@ -10,6 +10,7 @@ import {
 } from './common/api-contract/dto/api-envelope.dto';
 import { PaginationMetaDto } from './common/api-contract/dto/pagination-meta.dto';
 
+// Thực hiện chức năng bootstrap.
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);

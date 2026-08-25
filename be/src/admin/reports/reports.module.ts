@@ -1,13 +1,2 @@
-﻿import { Module } from '@nestjs/common';
-import { AuthModule } from '../../auth/auth.module';
-import { PrismaModule } from '../../prisma/prisma.module';
-import { ReportsController } from './reports.controller';
-import { ReportsService } from './reports.service';
-
-@Module({
-  imports: [AuthModule, PrismaModule],
-  controllers: [ReportsController],
-  providers: [ReportsService],
-  exports: [ReportsService],
-})
-export class ReportsModule {}
+/** Compatibility path retained for the MF-05 contribution history. */
+export { ReportsModule } from '../../reports/reports.module';

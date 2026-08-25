@@ -1,19 +1,5 @@
-﻿import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-export enum AdminMutableUserStatus {
-  ACTIVE = 'ACTIVE',
-  BLOCKED = 'BLOCKED',
-}
-
-export class UpdateUserStatusDto {
-  @ApiProperty({ enum: AdminMutableUserStatus })
-  @IsEnum(AdminMutableUserStatus)
-  status!: AdminMutableUserStatus;
-
-  @ApiPropertyOptional({ maxLength: 500 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  reason?: string;
-}
+/** Re-export the current production DTO while preserving the member-owned path. */
+export {
+  UpdateUserStatusDto,
+  AdminMutableUserStatus,
+} from '../../dto/update-user-status.dto';

@@ -7,7 +7,11 @@ import * as authApi from "../../api/auth.api";
 import * as profileApi from "../../api/profile.api";
 import { clearStoredAuthToken } from "../../lib/auth-token";
 import { ApiError } from "../../lib/http";
-import { getFirebaseAuth, getGoogleAuthProvider } from "../../lib/firebase";
+import {
+  getFirebaseAuth,
+  getGoogleAuthProvider,
+  prepareFirebaseAuth,
+} from "../../lib/firebase";
 import {
   clearPendingGoogleRegistration,
   storePendingGoogleRegistration,
@@ -22,7 +26,7 @@ import type {
 } from "../../types/auth";
 import { AuthContext } from "./auth-context";
 
-const SESSION_RESTORE_TIMEOUT_MS = 8_000;
+const SESSION_RESTORE_TIMEOUT_MS = 3_000;
 
 // Hiển thị giao diện xác thực provider.
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -50,12 +54,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const firebaseAuth = getFirebaseAuth();
+    const restoreController = new AbortController();
     clearStoredAuthToken();
-    const restoreTimeout = window.setTimeout(
-      () => setIsLoading(false),
-      SESSION_RESTORE_TIMEOUT_MS,
-    );
-    void refreshUser().finally(() => window.clearTimeout(restoreTimeout));
+    const restoreTimeout = window.setTimeout(() => {
+      restoreController.abort();
+      setIsLoading(false);
+    }, SESSION_RESTORE_TIMEOUT_MS);
+    void authApi
+      .getCurrentUser(restoreController.signal)
+      .then(setUser)
+      .catch((error: unknown) => {
+        if (error instanceof ApiError && error.status === 401) setUser(null);
+      })
+      .finally(() => {
+        window.clearTimeout(restoreTimeout);
+        setIsLoading(false);
+      });
 
     // Xử lý sự kiện unauthorized.
     function handleUnauthorized() {
@@ -67,13 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener("ai-study-hub:unauthorized", handleUnauthorized);
 
     return () => {
+      restoreController.abort();
       window.clearTimeout(restoreTimeout);
       window.removeEventListener(
         "ai-study-hub:unauthorized",
         handleUnauthorized,
       );
     };
-  }, [refreshUser]);
+  }, []);
 
   // Xử lý đăng nhập bằng email/mật khẩu, cập nhật user state sau khi thành công.
   const handleLogin = useCallback(async (payload: LoginPayload) => {
@@ -96,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Đăng nhập bằng Google popup; nếu tài khoản chưa đăng ký sẽ chuyển sang luồng đăng ký.
   const handleGoogleLogin =
     useCallback(async (): Promise<GoogleLoginResult> => {
-      const firebaseAuth = getFirebaseAuth();
+      const firebaseAuth = await prepareFirebaseAuth();
       const googleAuthProvider = getGoogleAuthProvider();
       const credential = await signInWithPopup(
         firebaseAuth,

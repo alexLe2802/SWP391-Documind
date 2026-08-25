@@ -13,8 +13,8 @@ Client Request
   │
   ▼
 FirebaseAuthGuard
-  ├── Extracts Bearer token from Authorization header
-  ├── Verifies token with Firebase Admin SDK
+  ├── Reads a Bearer token or the `documind_session` HttpOnly cookie
+  ├── Verifies the Firebase ID token/session cookie with Firebase Admin SDK
   ├── Looks up User record in database by firebaseUid
   ├── Checks user.status === ACTIVE (rejects BLOCKED / INACTIVE)
   └── Attaches AuthenticatedUser to request context
@@ -76,6 +76,8 @@ The `AuditLog` records: `userId` (admin), `action`, `targetType`, `targetId`,
 ## Authorization Rules Summary
 
 - Only users with `role.name === ADMIN` can access any `/admin/**` route.
+- Production web requests normally use the secure HttpOnly session cookie; Bearer
+  tokens remain supported for mobile and compatible API clients.
 - An admin cannot block their own account.
 - An admin cannot block another admin account.
 - Users with `status === INACTIVE` (pending email verification) cannot have their

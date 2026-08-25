@@ -26,6 +26,7 @@ import { StorageModule } from './storage/storage.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { TagsModule } from './tags/tags.module';
 import { UsersModule } from './users/users.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 const scheduleModuleFactory = ScheduleModule as unknown as {
   forRoot(): DynamicModule;
@@ -47,6 +48,7 @@ const scheduleModuleFactory = ScheduleModule as unknown as {
     AuthModule,
     HealthModule,
     UsersModule,
+    NotificationsModule,
     RolesModule,
     SubjectsModule,
     CategoriesModule,
