@@ -76,7 +76,7 @@ describe("LandingPage authentication state", () => {
     ).toBe(true);
   });
 
-  it("links active admins to the admin dashboard", () => {
+  it("links active admins to the shared dashboard", () => {
     vi.mocked(useAuth).mockReturnValue({
       user: { ...activeUser, role: "ADMIN" },
       isLoading: false,
@@ -87,7 +87,7 @@ describe("LandingPage authentication state", () => {
     const appLinks = screen.getAllByRole("link", { name: "Open app" });
     expect(appLinks.length).toBeGreaterThan(0);
     expect(
-      appLinks.every((link) => link.getAttribute("href") === "/admin/dashboard"),
+      appLinks.every((link) => link.getAttribute("href") === "/dashboard"),
     ).toBe(true);
   });
 
