@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../core/api_client.dart';
 import '../../core/firebase_options.dart';
 
+// Các provider dùng chung cho phiên Firebase và API đã xác thực.
 final firebaseAuthProvider = Provider((_) => FirebaseAuth.instance);
 final apiClientProvider = Provider(
   (ref) => ApiClient(ref.watch(firebaseAuthProvider)),
@@ -15,6 +16,7 @@ final authStateProvider = StreamProvider<User?>(
   (ref) => ref.watch(firebaseAuthProvider).authStateChanges(),
 );
 
+/// Giữ hồ sơ backend đồng bộ với phiên Firebase hiện tại.
 class AuthenticatedProfile extends Notifier<Map<String, dynamic>?> {
   @override
   Map<String, dynamic>? build() => null;
@@ -33,6 +35,7 @@ final authenticatedProfileProvider =
       AuthenticatedProfile.new,
     );
 
+/// Điều phối đăng nhập, đăng ký và dọn dữ liệu phiên.
 class AuthController {
   AuthController(this._auth, this._api, this._ref);
   final FirebaseAuth _auth;

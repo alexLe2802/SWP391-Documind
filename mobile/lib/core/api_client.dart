@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+/// Gọi API backend, tự gắn Firebase token và mở lớp response chuẩn.
 class ApiClient {
   ApiClient(this._auth)
     : dio = Dio(
@@ -33,7 +34,7 @@ class ApiClient {
   final FirebaseAuth _auth;
   final Dio dio;
 
-  // Thực hiện chức năng unwrap.
+  // Lấy data khỏi API envelope, giữ lại meta cho danh sách phân trang.
   dynamic unwrap(dynamic response) {
     if (response is Map<String, dynamic> && response['success'] == true) {
       final data = response['data'];
@@ -45,7 +46,7 @@ class ApiClient {
     return response;
   }
 
-  // Lấy dữ liệu from.
+  // Chuẩn hóa các dạng response danh sách về cùng một kiểu.
   List<Map<String, dynamic>> listFrom(dynamic value) {
     dynamic raw = value;
     if (raw is Map) raw = raw['items'] ?? raw['data'] ?? raw['results'];

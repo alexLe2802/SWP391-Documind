@@ -7,6 +7,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../auth/auth_controller.dart';
 
+// Tải song song gói dịch vụ, quota hiện tại và lịch sử thanh toán.
 final subscriptionProvider = FutureProvider.autoDispose<Map<String, dynamic>>((
   ref,
 ) async {
@@ -23,6 +24,7 @@ final subscriptionProvider = FutureProvider.autoDispose<Map<String, dynamic>>((
   };
 });
 
+/// Hiển thị gói dịch vụ và điều phối quy trình thanh toán SePay.
 class SubscriptionScreen extends ConsumerWidget {
   const SubscriptionScreen({super.key});
 

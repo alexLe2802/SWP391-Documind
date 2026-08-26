@@ -5,6 +5,7 @@ import 'features/auth/auth_controller.dart';
 import 'features/auth/login_screen.dart';
 import 'features/home/home_shell.dart';
 
+/// Cấu hình giao diện chung và chọn màn hình theo trạng thái đăng nhập.
 class DocuMindApp extends ConsumerWidget {
   const DocuMindApp({super.key});
 

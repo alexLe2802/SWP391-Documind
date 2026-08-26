@@ -5,6 +5,7 @@ import 'auth_controller.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
+/// Cho phép đăng nhập bằng email hoặc Google và hiển thị lỗi thân thiện.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
   // Tạo state quản lý vòng đời của widget.

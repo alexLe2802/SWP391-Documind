@@ -7,6 +7,7 @@ import '../auth/auth_controller.dart';
 import '../home/home_shell.dart';
 import '../subscription/subscription_screen.dart';
 
+/// Hiển thị và cập nhật tên, ảnh đại diện cùng thông tin gói dịch vụ.
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
   // Tạo state quản lý vòng đời của widget.

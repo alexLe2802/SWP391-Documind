@@ -6,6 +6,7 @@ import '../auth/auth_controller.dart';
 import '../chat/chat_screen.dart';
 import '../documents/documents_screen.dart';
 
+// Tải tài liệu cộng đồng và danh sách đã lưu cho các tab tương ứng.
 final communityDocumentsProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
       final api = ref.watch(apiClientProvider);
@@ -18,6 +19,7 @@ final savedDocumentsProvider =
       return api.listFrom(await api.get('/saved-documents', query: {'limit': 100}));
     });
 
+/// Gom luồng khám phá, tài liệu đã lưu và trao đổi cộng đồng.
 class CommunityHubScreen extends StatelessWidget {
   const CommunityHubScreen({super.key});
 

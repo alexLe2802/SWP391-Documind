@@ -114,12 +114,12 @@ export class StorageService {
     }
   }
 
+  // Tải buffer lên R2; hỗ trợ cả object key có sẵn và file của người dùng.
   async uploadObject(input: UploadObjectInput): Promise<UploadObjectResult>;
   async uploadObject(
     ownerId: string,
     file: UploadedFile,
   ): Promise<UploadedObjectResponse>;
-  // Tạo hoặc lưu tải lên object.
   async uploadObject(
     inputOrOwnerId: UploadObjectInput | string,
     file?: UploadedFile,
@@ -146,6 +146,7 @@ export class StorageService {
     return this.putObject(inputOrOwnerId);
   }
 
+  // Tạo URL tải xuống có thời hạn và kiểm tra quyền sở hữu khi cần.
   async createDownloadUrl(
     ownerId: string,
     key: string,
@@ -154,7 +155,6 @@ export class StorageService {
     objectKey: string,
     originalFileName: string,
   ): Promise<PresignedObjectUrl>;
-  // Tạo hoặc lưu tải xuống url.
   async createDownloadUrl(
     objectKeyOrOwnerId: string,
     keyOrFileName: string,
@@ -224,12 +224,12 @@ export class StorageService {
     };
   }
 
+  // Tạo URL xem trước công khai hoặc URL ký tạm thời tùy cấu hình R2.
   async createPreviewUrl(
     ownerId: string,
     key: string,
   ): Promise<PreviewUrlResponse>;
   createPreviewUrl(objectKey: string): Promise<PresignedObjectUrl>;
-  // Tạo hoặc lưu xem trước url.
   async createPreviewUrl(
     objectKeyOrOwnerId: string,
     key?: string,
@@ -328,12 +328,12 @@ export class StorageService {
     }
   }
 
+  // Xóa object sau khi kiểm tra quyền sở hữu nếu có ownerId.
   async deleteObject(
     ownerId: string,
     key: string,
   ): Promise<{ message: string }>;
   async deleteObject(objectKey: string): Promise<void>;
-  // Xóa hoặc giải phóng object.
   async deleteObject(
     objectKeyOrOwnerId: string,
     key?: string,

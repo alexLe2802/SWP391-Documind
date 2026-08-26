@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_controller.dart';
 
+/// Gửi email đặt lại mật khẩu qua luồng xác thực dùng chung.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({this.initialEmail = '', super.key});
   final String initialEmail;

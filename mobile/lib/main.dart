@@ -6,7 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'app.dart';
 import 'core/firebase_options.dart';
 
-// Thực hiện chức năng main.
+// Khởi tạo Firebase, đọc phiên bản ứng dụng rồi mở màn hình splash.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Object? startupError;

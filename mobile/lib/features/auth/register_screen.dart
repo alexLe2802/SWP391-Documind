@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_controller.dart';
 
+/// Đăng ký tài khoản mới, kể cả bước hoàn thiện hồ sơ Google.
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({this.googleData, super.key});
   final GoogleRegistrationData? googleData;

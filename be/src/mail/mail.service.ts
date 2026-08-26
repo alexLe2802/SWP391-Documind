@@ -24,6 +24,7 @@ export class MailService {
     this.apiKey = this.config.get<string>('RESEND_API_KEY')?.trim();
   }
 
+  // Gửi email HTML qua Resend và chuẩn hóa lỗi nhà cung cấp.
   async send(input: SendMailInput): Promise<void> {
     if (!this.apiKey) {
       throw new ServiceUnavailableException('Email delivery is not configured');

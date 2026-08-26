@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
+/// Tạo FirebaseOptions từ dart-define tương ứng với nền tảng đang chạy.
 abstract final class DocuMindFirebaseOptions {
   static const _apiKey = String.fromEnvironment('FIREBASE_API_KEY');
   static const _androidApiKey = String.fromEnvironment(
@@ -31,6 +32,7 @@ abstract final class DocuMindFirebaseOptions {
     'GOOGLE_WEB_CLIENT_ID',
   );
 
+  // Chọn app ID/API key đúng nền tảng và báo lỗi sớm nếu thiếu cấu hình.
   static FirebaseOptions get currentPlatform {
     final appId = kIsWeb
         ? _webAppId

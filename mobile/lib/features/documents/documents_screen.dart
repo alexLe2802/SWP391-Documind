@@ -9,6 +9,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../auth/auth_controller.dart';
 
+// Tải thư viện cá nhân và nguồn tài liệu có thể dùng để hỏi AI.
 final documentsProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
       final api = ref.watch(apiClientProvider);
@@ -90,6 +91,7 @@ final libraryMetadataProvider = FutureProvider.autoDispose((ref) async {
   );
 });
 
+/// Quản lý lọc, tải lên, xem trước và thao tác trên thư viện tài liệu.
 class DocumentsScreen extends ConsumerStatefulWidget {
   const DocumentsScreen({super.key});
 

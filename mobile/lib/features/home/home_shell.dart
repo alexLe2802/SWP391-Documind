@@ -8,6 +8,7 @@ import '../community/community_hub_screen.dart';
 import '../documents/documents_screen.dart';
 import '../profile/profile_screen.dart';
 
+// Ưu tiên hồ sơ đã đồng bộ, chỉ gọi backend khi bộ nhớ chưa có dữ liệu.
 final currentProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>(
   (ref) async {
     final authenticatedProfile = ref.watch(authenticatedProfileProvider);
@@ -17,6 +18,7 @@ final currentProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>(
   },
 );
 
+/// Điều phối thanh điều hướng chính và mở thêm tab quản trị cho admin.
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
   // Tạo state quản lý vòng đời của widget.

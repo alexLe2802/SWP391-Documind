@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_controller.dart';
 
+// Tải số liệu tổng quan dùng cho tab quản trị.
 final adminSummaryProvider = FutureProvider<Map<String, dynamic>>(
   (ref) async => Map<String, dynamic>.from(
     await ref.watch(apiClientProvider).get('/admin/dashboard/summary'),
   ),
 );
 
+/// Gom dashboard, người dùng và kiểm duyệt tài liệu trong ba tab.
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
   // Xây dựng giao diện hoặc dữ liệu trả về.

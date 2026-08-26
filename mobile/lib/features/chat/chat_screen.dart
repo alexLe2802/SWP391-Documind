@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_controller.dart';
 import '../documents/documents_screen.dart';
 
+/// Hỏi AI dựa trên một hoặc nhiều tài liệu người dùng chọn.
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({this.initialDocumentId, super.key});
   final String? initialDocumentId;

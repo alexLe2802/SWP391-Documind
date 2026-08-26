@@ -59,6 +59,7 @@ const OFFICE_TYPE_KEYWORDS = [
   "PRESENTATION",
 ];
 
+// Tách phần mở rộng từ tên file hoặc URL, bỏ qua query và fragment.
 function extractExtension(filePathOrUrl: string): string {
   try {
     const clean = filePathOrUrl.split("?")[0].split("#")[0];
