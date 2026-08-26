@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -34,10 +33,9 @@ export class NotificationsService {
     message: string;
     documentId?: string;
   }): Promise<void> {
-    const id = randomUUID();
     await this.prisma.$executeRaw(Prisma.sql`
-      INSERT INTO "notifications" ("id", "user_id", "type", "title", "message", "document_id")
-      VALUES (${id}::uuid, ${input.userId}::uuid, ${input.type}, ${input.title}, ${input.message}, ${input.documentId ?? null}::uuid)
+      INSERT INTO "notifications" ("user_id", "type", "title", "message", "document_id")
+      VALUES (${input.userId}::uuid, ${input.type}, ${input.title}, ${input.message}, ${input.documentId ?? null}::uuid)
     `);
   }
 
