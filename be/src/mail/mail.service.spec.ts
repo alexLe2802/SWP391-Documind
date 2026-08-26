@@ -1,5 +1,5 @@
-import { ConfigService } from '@nestjs/config';
 import { ServiceUnavailableException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { MailService } from './mail.service';
 
 describe('MailService', () => {
@@ -34,15 +34,23 @@ describe('MailService', () => {
     expect(headers.get('Content-Type')).toBe('application/json');
     expect(headers.get('User-Agent')).toBe('documind/1.0');
     expect(request?.body).toBe(JSON.stringify(message));
+    expect(request?.signal).toBeInstanceOf(AbortSignal);
   });
 
   it('returns a service error when Resend rejects the email', async () => {
     fetchSpy.mockResolvedValue(
-      new Response(
-        JSON.stringify({ message: 'The documind.icu domain is not verified' }),
-        { status: 403 },
-      ),
+      new Response(JSON.stringify({ message: 'recipient details' }), {
+        status: 403,
+      }),
     );
+
+    await expect(service.send(message)).rejects.toBeInstanceOf(
+      ServiceUnavailableException,
+    );
+  });
+
+  it('returns a service error when the Resend request fails', async () => {
+    fetchSpy.mockRejectedValue(new Error('network details'));
 
     await expect(service.send(message)).rejects.toBeInstanceOf(
       ServiceUnavailableException,

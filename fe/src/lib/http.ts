@@ -10,6 +10,7 @@ export function normalizeApiBaseUrl(value: string) {
 // configured backend, so transient upstream responses cannot be hidden by the
 // browser as CORS failures.
 export const API_BASE_URL = "/api";
+const API_REQUEST_TIMEOUT_MS = 20_000;
 
 type RequestOptions = Omit<RequestInit, "body"> & {
   body?: BodyInit | Record<string, unknown> | null;
@@ -62,10 +63,15 @@ export async function apiRequest<T>(
     body = JSON.stringify(body);
   }
 
+  const timeoutSignal = AbortSignal.timeout(API_REQUEST_TIMEOUT_MS);
+  const signal = requestOptions.signal
+    ? AbortSignal.any([requestOptions.signal, timeoutSignal])
+    : timeoutSignal;
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...requestOptions,
     body,
     headers,
+    signal,
     credentials: "include",
   });
 

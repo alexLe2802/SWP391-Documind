@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -10,14 +12,17 @@ class ApiClient {
             defaultValue: 'https://api.documind.icu/api',
           ),
           connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 45),
+          sendTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 20),
           headers: const {'Accept': 'application/json'},
         ),
       ) {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await _auth.currentUser?.getIdToken();
+          final token = await _auth.currentUser?.getIdToken().timeout(
+            const Duration(seconds: 8),
+          );
           if (token != null) options.headers['Authorization'] = 'Bearer $token';
           handler.next(options);
         },

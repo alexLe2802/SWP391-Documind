@@ -43,6 +43,7 @@ describe('apiRequest', () => {
     const headers = new Headers(request?.headers)
     expect(headers.has('Authorization')).toBe(false)
     expect(request?.credentials).toBe('include')
+    expect(request?.signal).toBeInstanceOf(AbortSignal)
   })
 
   it('does not attach a bearer token to protected API requests', async () => {
