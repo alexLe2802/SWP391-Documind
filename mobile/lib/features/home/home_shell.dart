@@ -10,6 +10,8 @@ import '../profile/profile_screen.dart';
 
 final currentProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>>(
   (ref) async {
+    final authenticatedProfile = ref.watch(authenticatedProfileProvider);
+    if (authenticatedProfile != null) return authenticatedProfile;
     final result = await ref.watch(apiClientProvider).get('/auth/me');
     return Map<String, dynamic>.from(result['user'] ?? result);
   },
@@ -24,17 +26,29 @@ class HomeShell extends ConsumerStatefulWidget {
 
 class _HomeShellState extends ConsumerState<HomeShell> {
   int index = 0;
+  final visitedTabs = <int>{0};
+
+  void selectTab(int value) => setState(() {
+    index = value;
+    visitedTabs.add(value);
+  });
   // Xây dựng giao diện hoặc dữ liệu trả về.
   @override
   Widget build(BuildContext context) {
     final isAdmin = ref.watch(currentProfileProvider).value?['role'] == 'ADMIN';
-    final pages = <Widget>[
-      DashboardScreen(onOpen: (value) => setState(() => index = value)),
+    final availablePages = <Widget>[
+      DashboardScreen(onOpen: selectTab),
       const CommunityHubScreen(),
       const ChatScreen(),
       const ProfileScreen(),
       if (isAdmin) const AdminScreen(),
     ];
+    final pages = List<Widget>.generate(
+      availablePages.length,
+      (tabIndex) => visitedTabs.contains(tabIndex)
+          ? availablePages[tabIndex]
+          : const SizedBox.shrink(),
+    );
     final titles = [
       'Tổng quan',
       'Tài liệu',
@@ -76,7 +90,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           selectedIndex: index,
           onDestinationSelected: (value) {
             FocusManager.instance.primaryFocus?.unfocus();
-            setState(() => index = value);
+            selectTab(value);
           },
           destinations: [
             const NavigationDestination(

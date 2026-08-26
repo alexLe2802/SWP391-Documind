@@ -3,7 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { useAuth } from "../features/auth/useAuth";
 import { useLanguage } from "../i18n/LanguageProvider";
@@ -43,7 +43,6 @@ export function LoginView() {
   const { user, isLoading, login, loginWithGoogle } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -52,10 +51,9 @@ export function LoginView() {
 
   const redirectAfterLogin = useCallback(
     (role: "ADMIN" | "USER") => {
-      const from = searchParams?.get("from");
-      router.replace(from ?? getAuthenticatedHomeRoute(role));
+      router.replace(getAuthenticatedHomeRoute(role));
     },
-    [router, searchParams],
+    [router],
   );
 
   useEffect(() => {
@@ -64,7 +62,7 @@ export function LoginView() {
     }
   }, [isLoading, redirectAfterLogin, user]);
 
-  if (isLoading || user) {
+  if (user) {
     return (
       <div className="screen-message">
         <span className="loading-line" />

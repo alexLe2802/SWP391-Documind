@@ -15,14 +15,32 @@ final authStateProvider = StreamProvider<User?>(
   (ref) => ref.watch(firebaseAuthProvider).authStateChanges(),
 );
 
+class AuthenticatedProfile extends Notifier<Map<String, dynamic>?> {
+  @override
+  Map<String, dynamic>? build() => null;
+
+  void update(dynamic response) {
+    if (response is! Map) return;
+    final rawUser = response['user'];
+    if (rawUser is Map) state = Map<String, dynamic>.from(rawUser);
+  }
+
+  void clear() => state = null;
+}
+
+final authenticatedProfileProvider =
+    NotifierProvider<AuthenticatedProfile, Map<String, dynamic>?>(
+      AuthenticatedProfile.new,
+    );
+
 class AuthController {
-  AuthController(this._auth, this._api);
+  AuthController(this._auth, this._api, this._ref);
   final FirebaseAuth _auth;
   final ApiClient _api;
+  final Ref _ref;
 
   // Thực hiện chức năng sign in.
   Future<void> signIn(String email, String password) async {
-    await _clearSession();
     try {
       final credential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
@@ -31,7 +49,8 @@ class AuthController {
       if (credential.user?.emailVerified != true) {
         throw StateError('Verify your email before signing in.');
       }
-      await _api.post('/auth/firebase-login');
+      final response = await _api.post('/auth/firebase-login');
+      _ref.read(authenticatedProfileProvider.notifier).update(response);
     } catch (_) {
       await _auth.signOut();
       rethrow;
@@ -111,7 +130,8 @@ class AuthController {
       if (user == null) {
         throw StateError('Google session expired');
       }
-      await _api.post('/auth/firebase-login');
+      final response = await _api.post('/auth/firebase-login');
+      _ref.read(authenticatedProfileProvider.notifier).update(response);
       return null;
     } on DioException catch (error) {
       final body = error.response?.data;
@@ -140,6 +160,7 @@ class AuthController {
 
   // Thực hiện chức năng clear phiên.
   Future<void> _clearSession() async {
+    _ref.read(authenticatedProfileProvider.notifier).clear();
     await _auth.signOut();
     try {
       await GoogleSignIn.instance.disconnect();
@@ -162,5 +183,6 @@ final authControllerProvider = Provider(
   (ref) => AuthController(
     ref.watch(firebaseAuthProvider),
     ref.watch(apiClientProvider),
+    ref,
   ),
 );

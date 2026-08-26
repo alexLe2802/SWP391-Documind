@@ -20,12 +20,10 @@ export class MailService {
   private readonly logger = new Logger(MailService.name);
   private readonly apiKey?: string;
 
-  // Khởi tạo đối tượng và nhận các dependency cần thiết.
   constructor(private readonly config: ConfigService) {
     this.apiKey = this.config.get<string>('RESEND_API_KEY')?.trim();
   }
 
-  // Thực hiện nghiệp vụ send.
   async send(input: SendMailInput): Promise<void> {
     if (!this.apiKey) {
       throw new ServiceUnavailableException('Email delivery is not configured');
@@ -45,21 +43,18 @@ export class MailService {
 
       if (response.ok) return;
 
-      const responseBody = (await response.text()).slice(0, 1_000);
+      // Do not log the response body: providers may echo recipient or content.
       this.logger.error(
-        `Resend delivery rejected: ${JSON.stringify({
-          status: response.status,
-          response: responseBody,
-        })}`,
+        `Resend delivery rejected: ${JSON.stringify({ status: response.status })}`,
       );
       throw new ServiceUnavailableException('Email delivery failed');
     } catch (error) {
       if (error instanceof ServiceUnavailableException) throw error;
 
+      // Do not log the API key, message, recipient, or generated action URL.
       this.logger.error(
         `Resend API request failed: ${JSON.stringify({
-          name: error instanceof Error ? error.name : 'UnknownError',
-          message: error instanceof Error ? error.message : String(error),
+          errorName: error instanceof Error ? error.name : 'UnknownError',
         })}`,
       );
       throw new ServiceUnavailableException('Email delivery failed');

@@ -25,5 +25,6 @@ export const ROUTES = {
 
 // Lấy dữ liệu authenticated home route.
 export function getAuthenticatedHomeRoute(role: "ADMIN" | "USER") {
-  return role === "ADMIN" ? ROUTES.adminDashboard : ROUTES.dashboard;
+  void role;
+  return ROUTES.dashboard;
 }

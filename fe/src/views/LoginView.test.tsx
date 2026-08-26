@@ -48,7 +48,7 @@ describe("LoginView", () => {
     });
   });
 
-  it("waits for Firebase to restore the session before showing the form", () => {
+  it("keeps the login form usable while restoring the session", () => {
     vi.mocked(useAuth).mockReturnValue({
       user: null,
       isLoading: true,
@@ -56,8 +56,7 @@ describe("LoginView", () => {
 
     render(<LoginView />);
 
-    expect(screen.getByText("Checking session")).toBeInTheDocument();
-    expect(screen.queryByLabelText("auth.email")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("auth.email")).toBeInTheDocument();
     expect(replace).not.toHaveBeenCalled();
   });
 

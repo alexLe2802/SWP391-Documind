@@ -112,6 +112,15 @@ describe('validateEnvironment', () => {
     ).toThrow('"MOCK_AUTH" must be [false]');
   });
 
+  it('requires a Resend API key in production', () => {
+    const { RESEND_API_KEY: _resendApiKey, ...environment } =
+      validProductionEnvironment;
+
+    expect(() => validateEnvironment(environment)).toThrow(
+      '"RESEND_API_KEY" is required',
+    );
+  });
+
   it('requires a Gemini API key when mock mode is disabled', () => {
     expect(() =>
       validateEnvironment({
