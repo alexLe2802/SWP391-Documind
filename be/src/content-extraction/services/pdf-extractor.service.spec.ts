@@ -140,6 +140,39 @@ describe('PdfExtractorService', () => {
     expect(cloud).toHaveBeenCalledTimes(1);
   });
 
+  it('accepts the validated boolean premium-mode configuration', async () => {
+    configService.get.mockImplementation((key: string) => {
+      if (key === 'LLAMA_PARSE_PREMIUM_MODE') return true;
+      return '';
+    });
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 503,
+      text: jest.fn().mockResolvedValue('unavailable'),
+    } as unknown as Response);
+    const service = new PdfExtractorService(configService as never);
+    const serviceWithLlamaParse = service as unknown as {
+      extractWithLlamaParse: (
+        buffer: Buffer,
+        filename: string,
+        apiKey: string,
+      ) => Promise<string>;
+    };
+
+    await expect(
+      serviceWithLlamaParse.extractWithLlamaParse(
+        Buffer.from('scan'),
+        'scan.pdf',
+        'llama-key',
+      ),
+    ).rejects.toThrow('LlamaParse upload failed: HTTP 503');
+
+    const request = fetchMock.mock.calls[0]?.[1];
+    expect(request?.body).toBeInstanceOf(FormData);
+    expect((request?.body as FormData).get('premium_mode')).toBe('true');
+    fetchMock.mockRestore();
+  });
+
   it('skips cloud OCR when unreadable pages exceed the configured budget', async () => {
     configService.get.mockImplementation((key: string) => {
       if (key === 'LLAMA_CLOUD_API_KEY') return 'llama-key';

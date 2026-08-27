@@ -163,10 +163,13 @@ export class PdfExtractorService {
     formData.append('file', blob, filename);
     // Premium OCR is opt-in because it consumes more provider credits.
     formData.append('auto_mode', 'true');
+    const premiumMode = this.configService.get<boolean | string>(
+      'LLAMA_PARSE_PREMIUM_MODE',
+    );
     if (
-      this.configService
-        .get<string>('LLAMA_PARSE_PREMIUM_MODE')
-        ?.toLowerCase() === 'true'
+      premiumMode === true ||
+      (typeof premiumMode === 'string' &&
+        premiumMode.trim().toLowerCase() === 'true')
     ) {
       formData.append('premium_mode', 'true');
     }
